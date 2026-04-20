@@ -59,6 +59,14 @@ describe("matchGroup", () => {
     expect(matchGroup("https://www.amazon.co.jp/dp/B0ABC")).toMatchObject({ name: "Amazon" });
   });
 
+  test("YouTubeのドメインを検出する", () => {
+    expect(matchGroup("https://www.youtube.com/watch?v=abc123")).toMatchObject({ name: "YouTube" });
+  });
+
+  test("youtu.beの短縮URLを検出する", () => {
+    expect(matchGroup("https://youtu.be/abc123")).toMatchObject({ name: "YouTube" });
+  });
+
   test("マッチしないURLはnullを返す", () => {
     expect(matchGroup("https://example.com/")).toBeNull();
   });

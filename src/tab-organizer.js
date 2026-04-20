@@ -1,5 +1,5 @@
 const GROUP_RULES = [
-  { name: "Confluence", color: "teal",   patterns: [/confluence\./i, /atlassian\.net\/wiki/i] },
+  { name: "Confluence", color: "cyan",   patterns: [/confluence\./i, /atlassian\.net\/wiki/i] },
   { name: "Jira",       color: "blue",   patterns: [/jira\./i, /atlassian\.net/i] },
   { name: "GitHub",  color: "purple", patterns: [/github\.com/i] },
   { name: "Slack",   color: "yellow", patterns: [/app\.slack\.com/i] },
@@ -9,6 +9,7 @@ const GROUP_RULES = [
   { name: "Qiita",   color: "green",  patterns: [/qiita\.com/i] },
   { name: "Zenn",    color: "blue",   patterns: [/zenn\.dev/i] },
   { name: "Amazon",  color: "orange", patterns: [/amazon\.co\.jp/i, /amazon\.com/i, /amzn\.to/i] },
+  { name: "YouTube", color: "red",    patterns: [/youtube\.com/i, /youtu\.be/i] },
 ];
 
 /**
