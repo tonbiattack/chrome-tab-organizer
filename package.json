@@ -1,0 +1,14 @@
+{
+  "name": "chrome-tab-organizer",
+  "version": "1.0.0",
+  "description": "重複タブの削除とドメインごとのタブ整理を行うChrome拡張",
+  "type": "commonjs",
+  "scripts": {
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}
