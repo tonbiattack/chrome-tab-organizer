@@ -1,5 +1,6 @@
 const GROUP_RULES = [
-  { name: "Jira",    color: "blue",   patterns: [/jira\./i, /atlassian\.net/i] },
+  { name: "Confluence", color: "teal",   patterns: [/confluence\./i, /atlassian\.net\/wiki/i] },
+  { name: "Jira",       color: "blue",   patterns: [/jira\./i, /atlassian\.net/i] },
   { name: "GitHub",  color: "purple", patterns: [/github\.com/i] },
   { name: "Slack",   color: "yellow", patterns: [/app\.slack\.com/i] },
   { name: "Notion",  color: "grey",   patterns: [/notion\.so/i] },
