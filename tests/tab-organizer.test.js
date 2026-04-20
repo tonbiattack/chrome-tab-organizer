@@ -47,6 +47,18 @@ describe("matchGroup", () => {
     expect(matchGroup("https://chatgpt.com/c/session-id")).toMatchObject({ name: "ChatGPT" });
   });
 
+  test("Qiitaのドメインを検出する", () => {
+    expect(matchGroup("https://qiita.com/user/items/abc123")).toMatchObject({ name: "Qiita" });
+  });
+
+  test("Zennのドメインを検出する", () => {
+    expect(matchGroup("https://zenn.dev/user/articles/abc123")).toMatchObject({ name: "Zenn" });
+  });
+
+  test("Amazonのドメインを検出する", () => {
+    expect(matchGroup("https://www.amazon.co.jp/dp/B0ABC")).toMatchObject({ name: "Amazon" });
+  });
+
   test("マッチしないURLはnullを返す", () => {
     expect(matchGroup("https://example.com/")).toBeNull();
   });

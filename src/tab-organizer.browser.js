@@ -5,6 +5,9 @@ const GROUP_RULES = [
   { name: "Notion",  color: "grey",   patterns: [/notion\.so/i] },
   { name: "Google",  color: "green",  patterns: [/google\.com/i, /docs\.google\.com/i, /drive\.google\.com/i] },
   { name: "ChatGPT", color: "cyan",   patterns: [/chatgpt\.com/i, /chat\.openai\.com/i] },
+  { name: "Qiita",   color: "green",  patterns: [/qiita\.com/i] },
+  { name: "Zenn",    color: "blue",   patterns: [/zenn\.dev/i] },
+  { name: "Amazon",  color: "orange", patterns: [/amazon\.co\.jp/i, /amazon\.com/i, /amzn\.to/i] },
 ];
 
 function normalizeUrl(url) {
