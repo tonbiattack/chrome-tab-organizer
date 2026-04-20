@@ -113,4 +113,37 @@ async function sortAndGroupTabs(tabs, windowId) {
   return { groupCount };
 }
 
-export { GROUP_RULES, normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs };
+async function mergeWindowsToLimit(maxWindows) {
+  const windows = await chrome.windows.getAll({ populate: false, windowTypes: ["normal"] });
+  if (windows.length <= maxWindows) return { merged: 0 };
+
+  // 現在のウィンドウを優先して残す（フォーカス中 → 作成日時順）
+  const focused = windows.find((w) => w.focused);
+  const focusedId = focused ? focused.id : windows[0].id;
+
+  const keep = [focusedId];
+  for (const w of windows) {
+    if (w.id !== focusedId && keep.length < maxWindows) keep.push(w.id);
+  }
+  const keepSet = new Set(keep);
+
+  const targetWindowId = focusedId;
+  let merged = 0;
+
+  for (const w of windows) {
+    if (keepSet.has(w.id)) continue;
+    const tabs = await chrome.tabs.query({ windowId: w.id });
+    const movable = tabs.filter(
+      (t) => t.url && !t.url.startsWith("chrome://") && !t.url.startsWith("chrome-extension://")
+    );
+    if (movable.length > 0) {
+      await chrome.tabs.move(movable.map((t) => t.id), { windowId: targetWindowId, index: -1 });
+    }
+    await chrome.windows.remove(w.id);
+    merged++;
+  }
+
+  return { merged };
+}
+
+export { GROUP_RULES, normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, mergeWindowsToLimit };

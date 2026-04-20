@@ -181,6 +181,49 @@
       height: 14px;
       cursor: pointer;
     }
+
+    .max-windows-row {
+      margin-top: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .max-windows-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      color: #4338ca;
+      user-select: none;
+      font-size: 12px;
+    }
+
+    .max-windows-label input[type="checkbox"] {
+      accent-color: #2563eb;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
+
+    .max-windows-input {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #4338ca;
+      padding-left: 20px;
+    }
+
+    .max-windows-input input[type="number"] {
+      width: 48px;
+      padding: 2px 4px;
+      border: 1px solid #c7d2fe;
+      border-radius: 4px;
+      font-size: 12px;
+      text-align: center;
+      color: #1e1b4b;
+    }
   </style>
 </head>
 <body>
@@ -195,6 +238,17 @@
       <input type="checkbox" id="allWindows">
       <span>全ウィンドウを対象にする</span>
     </label>
+    <div class="max-windows-row" id="maxWindowsRow" style="display:none;">
+      <label class="max-windows-label">
+        <input type="checkbox" id="enableMaxWindows">
+        <span>ウィンドウ数を制限する</span>
+      </label>
+      <div class="max-windows-input" id="maxWindowsInput" style="display:none;">
+        <span>最大</span>
+        <input type="number" id="maxWindowsCount" min="1" max="99" value="1">
+        <span>ウィンドウ</span>
+      </div>
+    </div>
   </div>
 
   <div class="content">

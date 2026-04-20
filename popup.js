@@ -1,9 +1,13 @@
-import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs } from "./src/tab-organizer.browser.js";
+import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, mergeWindowsToLimit } from "./src/tab-organizer.browser.js";
 
 const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
 const ruleListEl = document.getElementById("ruleList");
 const allWindowsEl = document.getElementById("allWindows");
+const maxWindowsRowEl = document.getElementById("maxWindowsRow");
+const enableMaxWindowsEl = document.getElementById("enableMaxWindows");
+const maxWindowsInputEl = document.getElementById("maxWindowsInput");
+const maxWindowsCountEl = document.getElementById("maxWindowsCount");
 
 const RULE_COLORS = {
   blue: "#3b82f6",
@@ -73,17 +77,36 @@ async function init() {
   renderRules();
 }
 
-allWindowsEl.addEventListener("change", updateTabCount);
+allWindowsEl.addEventListener("change", () => {
+  maxWindowsRowEl.style.display = allWindowsEl.checked ? "" : "none";
+  if (!allWindowsEl.checked) {
+    enableMaxWindowsEl.checked = false;
+    maxWindowsInputEl.style.display = "none";
+  }
+  updateTabCount();
+});
+
+enableMaxWindowsEl.addEventListener("change", () => {
+  maxWindowsInputEl.style.display = enableMaxWindowsEl.checked ? "" : "none";
+});
+
+async function applyWindowLimit() {
+  if (!allWindowsEl.checked || !enableMaxWindowsEl.checked) return null;
+  const max = parseInt(maxWindowsCountEl.value, 10);
+  if (!max || max < 1) return null;
+  return mergeWindowsToLimit(max);
+}
 
 document.getElementById("btnDedup").addEventListener("click", async () => {
-  const tabs = await getTargetTabs();
   try {
+    const windowResult = await applyWindowLimit();
+    const tabs = await getTargetTabs();
     const { removed } = await removeDuplicateTabs(tabs);
-    if (removed === 0) {
-      showStatus("重複タブはありませんでした", "success");
-    } else {
-      showStatus(`${removed} 件の重複タブを削除しました`, "success");
-    }
+
+    const parts = [];
+    if (windowResult && windowResult.merged > 0) parts.push(`${windowResult.merged} ウィンドウを統合`);
+    if (removed > 0) parts.push(`${removed} 件の重複タブを削除`);
+    showStatus(parts.length ? parts.join("、") + "しました" : "重複タブはありませんでした", "success");
     await updateTabCount();
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");
@@ -91,19 +114,20 @@ document.getElementById("btnDedup").addEventListener("click", async () => {
 });
 
 document.getElementById("btnSort").addEventListener("click", async () => {
-  const tabs = await getTargetTabs();
-  const windowsMap = groupTabsByWindow(tabs);
   try {
+    const windowResult = await applyWindowLimit();
+    const tabs = await getTargetTabs();
+    const windowsMap = groupTabsByWindow(tabs);
     let totalGroups = 0;
     for (const [windowId, windowTabs] of windowsMap) {
       const { groupCount } = await sortAndGroupTabs(windowTabs, windowId);
       totalGroups += groupCount;
     }
-    if (windowsMap.size > 1) {
-      showStatus(`${windowsMap.size} ウィンドウを ${totalGroups} グループに整理しました`, "success");
-    } else {
-      showStatus(`${totalGroups} グループに整理しました`, "success");
-    }
+
+    const parts = [];
+    if (windowResult && windowResult.merged > 0) parts.push(`${windowResult.merged} ウィンドウを統合`);
+    parts.push(`${totalGroups} グループに整理`);
+    showStatus(parts.join("、") + "しました", "success");
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");
   }
