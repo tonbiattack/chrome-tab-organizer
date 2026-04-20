@@ -72,7 +72,7 @@ npm run test:coverage
 
 ## 変更時の注意点
 
-- ルールを変える場合は CommonJS 版と ESM 版の両方を更新する
+- 標準ルール定義は `src/group-rules.json` を単一ソースとし、CommonJS 版と ESM 版でそこから `RegExp` を組み立てる
 - popup で `import` を使うファイルは `type="module"` で読み込む必要がある
 - `chrome://` と `chrome-extension://` は Chrome API 操作の対象外として扱っている
 - グループ化処理では、ルール名と一致するタイトルの既存グループだけを解除して再作成する。手動で作ったグループ（タイトルがルール名と一致しないもの）には触れない

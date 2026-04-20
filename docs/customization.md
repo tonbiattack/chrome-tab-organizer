@@ -2,7 +2,7 @@
 
 この拡張では、標準ルールとカスタムルールの 2 種類を使えます。
 
-- 標準ルール: [src/tab-organizer.js](../src/tab-organizer.js) と [src/tab-organizer.browser.js](../src/tab-organizer.browser.js) の `GROUP_RULES`
+- 標準ルール: [src/group-rules.json](../src/group-rules.json)
 - カスタムルール: popup から追加し、`chrome.storage.local` に保存
 
 通常の利用では popup からカスタムルールを追加するだけで十分です。コード編集は、標準ルールそのものを増やしたいときだけ必要です。
@@ -67,10 +67,9 @@
 
 追加場所:
 
-1. `src/tab-organizer.js` の `GROUP_RULES`
-2. `src/tab-organizer.browser.js` の `GROUP_RULES`
+1. `src/group-rules.json` にルールを追加する
 
-このプロジェクトではテスト用の CommonJS 実装と、popup 用の ESM 実装を分けているため、両方を更新する必要があります。
+標準ルールは JSON を単一のソースとして持ち、Node 側と browser 側で `RegExp` に変換しています。
 
 ## 現在の標準ルール一覧
 

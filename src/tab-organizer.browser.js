@@ -1,16 +1,9 @@
-const GROUP_RULES = [
-  { name: "Confluence", color: "cyan",   patterns: [/confluence\./i, /atlassian\.net\/wiki/i] },
-  { name: "Jira",       color: "blue",   patterns: [/jira\./i, /atlassian\.net/i] },
-  { name: "GitHub",  color: "purple", patterns: [/github\.com/i] },
-  { name: "Slack",   color: "yellow", patterns: [/app\.slack\.com/i] },
-  { name: "Notion",  color: "grey",   patterns: [/notion\.so/i] },
-  { name: "Google",  color: "green",  patterns: [/google\.com/i, /docs\.google\.com/i, /drive\.google\.com/i] },
-  { name: "ChatGPT", color: "cyan",   patterns: [/chatgpt\.com/i, /chat\.openai\.com/i] },
-  { name: "Qiita",   color: "green",  patterns: [/qiita\.com/i] },
-  { name: "Zenn",    color: "blue",   patterns: [/zenn\.dev/i] },
-  { name: "Amazon",  color: "orange", patterns: [/amazon\.co\.jp/i, /amazon\.com/i, /amzn\.to/i] },
-  { name: "YouTube", color: "red",    patterns: [/youtube\.com/i, /youtu\.be/i] },
-];
+import groupRulesData from "./group-rules.json" with { type: "json" };
+
+const GROUP_RULES = groupRulesData.map((rule) => ({
+  ...rule,
+  patterns: rule.patterns.map((pattern) => new RegExp(pattern, "i")),
+}));
 
 function normalizeUrl(url) {
   try {

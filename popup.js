@@ -1,4 +1,19 @@
 import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs } from "./src/tab-organizer.browser.js";
+import {
+  STORAGE_KEYS,
+  ALLOWED_COLORS,
+  getDefaultSettings,
+  resolvePopupSettings,
+  buildEnabledRulesForSave,
+  getActiveRules as getActiveRulesFromState,
+  getManagedRules as getManagedRulesFromState,
+  extractJiraIssueKeys,
+  sanitizeCustomRules,
+  compileCustomRule,
+  createPatternPreview,
+  mergeIssueKeys,
+  parseListInput,
+} from "./src/popup-logic.mjs";
 
 const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
@@ -15,13 +30,6 @@ const customRuleKeysEl = document.getElementById("customRuleKeys");
 const customPatternFieldsEl = document.getElementById("customPatternFields");
 const customJiraFieldsEl = document.getElementById("customJiraFields");
 const fillJiraKeysEl = document.getElementById("fillJiraKeys");
-const STORAGE_KEYS = {
-  allWindows: "allWindows",
-  collapseGroups: "collapseGroups",
-  enabledRules: "enabledRules",
-  customRules: "customRules",
-};
-
 const RULE_COLORS = {
   blue: "#3b82f6",
   purple: "#a855f7",
@@ -35,8 +43,6 @@ const RULE_COLORS = {
   cyan: "#06b6d4",
 };
 
-const ALLOWED_COLORS = ["blue", "cyan", "green", "grey", "orange", "pink", "purple", "red", "yellow"];
-
 let enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
 let customRules = [];
 
@@ -48,27 +54,12 @@ function showStatus(message, type = "success") {
   }, 3000);
 }
 
-function getDefaultSettings() {
-  return {
-    [STORAGE_KEYS.allWindows]: false,
-    [STORAGE_KEYS.collapseGroups]: false,
-    [STORAGE_KEYS.enabledRules]: GROUP_RULES.map((rule) => rule.name),
-    [STORAGE_KEYS.customRules]: [],
-  };
-}
-
 function getActiveRules() {
-  return [
-    ...customRules.filter((rule) => rule.enabled).map(compileCustomRule),
-    ...GROUP_RULES.filter((rule) => enabledRuleNames.has(rule.name)),
-  ];
+  return getActiveRulesFromState(GROUP_RULES, enabledRuleNames, customRules);
 }
 
 function getManagedRules() {
-  return [
-    ...customRules.map(compileCustomRule),
-    ...GROUP_RULES,
-  ];
+  return getManagedRulesFromState(GROUP_RULES, customRules);
 }
 
 function getStorageArea() {
@@ -85,16 +76,12 @@ async function loadSettings() {
     return;
   }
 
-  const settings = await storage.get(getDefaultSettings());
-  allWindowsEl.checked = Boolean(settings[STORAGE_KEYS.allWindows]);
-  collapseGroupsEl.checked = Boolean(settings[STORAGE_KEYS.collapseGroups]);
-
-  const validRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
-  enabledRuleNames = new Set(
-    (settings[STORAGE_KEYS.enabledRules] ?? []).filter((name) => validRuleNames.has(name))
-  );
-
-  customRules = sanitizeCustomRules(settings[STORAGE_KEYS.customRules] ?? []);
+  const settings = await storage.get(getDefaultSettings(GROUP_RULES));
+  const resolvedSettings = resolvePopupSettings(settings, GROUP_RULES);
+  allWindowsEl.checked = resolvedSettings.allWindows;
+  collapseGroupsEl.checked = resolvedSettings.collapseGroups;
+  enabledRuleNames = resolvedSettings.enabledRuleNames;
+  customRules = resolvedSettings.customRules;
 }
 
 async function saveAllWindowsSetting() {
@@ -116,9 +103,7 @@ async function saveEnabledRules() {
   }
 
   await storage.set({
-    [STORAGE_KEYS.enabledRules]: GROUP_RULES
-      .map((rule) => rule.name)
-      .filter((name) => enabledRuleNames.has(name)),
+    [STORAGE_KEYS.enabledRules]: buildEnabledRulesForSave(enabledRuleNames, GROUP_RULES),
   });
 }
 
@@ -129,119 +114,6 @@ async function saveCustomRules() {
   }
 
   await storage.set({ [STORAGE_KEYS.customRules]: customRules });
-}
-
-function escapeRegExp(value) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-
-function parseListInput(value) {
-  return value
-    .split(/[\n,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
-function buildJiraPattern(issueKey) {
-  const escapedKey = escapeRegExp(issueKey.toUpperCase());
-  return `(?:/browse/|[?&]selectedIssue=)${escapedKey}(?:[/?#&]|$)`;
-}
-
-function extractJiraIssueKeys(url) {
-  if (!url) {
-    return [];
-  }
-
-  const matches = new Set();
-
-  for (const match of url.matchAll(/\/browse\/([A-Z][A-Z0-9_]*-\d+)/gi)) {
-    matches.add(match[1].toUpperCase());
-  }
-
-  try {
-    const parsedUrl = new URL(url);
-    const selectedIssue = parsedUrl.searchParams.get("selectedIssue");
-    if (selectedIssue && /^[A-Z][A-Z0-9_]*-\d+$/i.test(selectedIssue)) {
-      matches.add(selectedIssue.toUpperCase());
-    }
-  } catch {
-    // URLとして解釈できない場合は browse パスの抽出結果だけ使う
-  }
-
-  return [...matches];
-}
-
-function sanitizeCustomRule(rule) {
-  if (!rule || typeof rule !== "object") {
-    return null;
-  }
-
-  const name = String(rule.name ?? "").trim();
-  const id = String(rule.id ?? "").trim();
-  const type = rule.type === "jira-keys" ? "jira-keys" : "url-pattern";
-  const color = ALLOWED_COLORS.includes(rule.color) ? rule.color : "blue";
-  const enabled = rule.enabled !== false;
-
-  if (!id || !name) {
-    return null;
-  }
-
-  if (type === "jira-keys") {
-    const issueKeys = parseListInput((rule.issueKeys ?? []).join(","))
-      .map((key) => key.toUpperCase())
-      .filter((key) => /^[A-Z][A-Z0-9_]*-\d+$/.test(key));
-
-    if (issueKeys.length === 0) {
-      return null;
-    }
-
-    return { id, name, type, color, enabled, issueKeys };
-  }
-
-  const patterns = parseListInput((rule.patterns ?? []).join("\n"));
-  if (patterns.length === 0) {
-    return null;
-  }
-
-  for (const pattern of patterns) {
-    try {
-      new RegExp(pattern, "i");
-    } catch {
-      return null;
-    }
-  }
-
-  return { id, name, type, color, enabled, patterns };
-}
-
-function sanitizeCustomRules(rules) {
-  return rules
-    .map(sanitizeCustomRule)
-    .filter(Boolean);
-}
-
-function compileCustomRule(rule) {
-  if (rule.type === "jira-keys") {
-    return {
-      name: rule.name,
-      color: rule.color,
-      patterns: rule.issueKeys.map((issueKey) => new RegExp(buildJiraPattern(issueKey), "i")),
-    };
-  }
-
-  return {
-    name: rule.name,
-    color: rule.color,
-    patterns: rule.patterns.map((pattern) => new RegExp(pattern, "i")),
-  };
-}
-
-function createPatternPreview(rule) {
-  if (rule.type === "jira-keys") {
-    return `Jira課題: ${rule.issueKeys.join(", ")}`;
-  }
-
-  return rule.patterns.join(", ");
 }
 
 function renderRules() {
@@ -414,15 +286,6 @@ function buildCustomRuleFromForm() {
   return { ...base, type, patterns };
 }
 
-function mergeIssueKeysIntoField(issueKeys) {
-  const merged = new Set([
-    ...parseListInput(customRuleKeysEl.value).map((key) => key.toUpperCase()),
-    ...issueKeys.map((key) => key.toUpperCase()),
-  ]);
-
-  customRuleKeysEl.value = [...merged].join(", ");
-}
-
 async function getTargetTabs() {
   return chrome.tabs.query(allWindowsEl.checked ? {} : { currentWindow: true });
 }
@@ -516,7 +379,7 @@ fillJiraKeysEl.addEventListener("click", async () => {
       return;
     }
 
-    mergeIssueKeysIntoField(issueKeys);
+    customRuleKeysEl.value = mergeIssueKeys(customRuleKeysEl.value, issueKeys);
     customRuleTypeEl.value = "jira-keys";
     syncCustomRuleTypeFields();
     showStatus(`${issueKeys.length} 件の Jira 課題キーを入力欄に追加しました`, "success");
