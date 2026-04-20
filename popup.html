@@ -44,7 +44,7 @@
       padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 8px;
+      gap: 10px;
     }
 
     .btn {
@@ -187,6 +187,109 @@
       word-break: break-word;
     }
 
+    .section-desc {
+      font-size: 11px;
+      color: #6b7280;
+      margin-bottom: 8px;
+      line-height: 1.4;
+    }
+
+    .custom-rule-item {
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .rule-delete {
+      border: none;
+      background: #fee2e2;
+      color: #b91c1c;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .rule-delete:hover {
+      background: #fecaca;
+    }
+
+    .form-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .form-field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .form-field label {
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    .form-field input,
+    .form-field select,
+    .form-field textarea {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      background: #fff;
+      color: #111827;
+    }
+
+    .form-field textarea {
+      resize: vertical;
+      min-height: 72px;
+    }
+
+    .field-help {
+      font-size: 11px;
+      color: #6b7280;
+      line-height: 1.4;
+    }
+
+    .inline-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .btn-tertiary {
+      background: #111827;
+      color: white;
+      justify-content: center;
+    }
+
+    .btn-tertiary:hover {
+      background: #1f2937;
+    }
+
+    .btn-ghost {
+      background: #eef2ff;
+      color: #3730a3;
+      justify-content: center;
+      padding: 8px 10px;
+      font-size: 12px;
+    }
+
+    .btn-ghost:hover {
+      background: #e0e7ff;
+    }
+
+    .empty-state {
+      font-size: 12px;
+      color: #6b7280;
+      padding: 6px 0;
+    }
+
     .rule-dot {
       width: 8px;
       height: 8px;
@@ -254,8 +357,64 @@
     <div id="status" class="status"></div>
 
     <div class="group-rules">
-      <h2>グループルール</h2>
+      <h2>標準ルール</h2>
       <div class="rule-list" id="ruleList"></div>
+    </div>
+
+    <div class="group-rules">
+      <h2>カスタムルール</h2>
+      <p class="section-desc">Jira課題キーをまとめて、親課題名やエピック名など任意の名前でグループ化できます。</p>
+      <div class="rule-list" id="customRuleList"></div>
+    </div>
+
+    <div class="group-rules">
+      <h2>ルール追加</h2>
+      <form id="customRuleForm" class="form-grid">
+        <div class="form-field">
+          <label for="customRuleName">グループ名</label>
+          <input id="customRuleName" type="text" placeholder="例: 親課題A / Sprint 42" required>
+        </div>
+
+        <div class="form-field">
+          <label for="customRuleColor">グループ色</label>
+          <select id="customRuleColor">
+            <option value="blue">blue</option>
+            <option value="cyan">cyan</option>
+            <option value="green">green</option>
+            <option value="grey">grey</option>
+            <option value="orange">orange</option>
+            <option value="pink">pink</option>
+            <option value="purple">purple</option>
+            <option value="red">red</option>
+            <option value="yellow">yellow</option>
+          </select>
+        </div>
+
+        <div class="form-field">
+          <label for="customRuleType">ルール種別</label>
+          <select id="customRuleType">
+            <option value="jira-keys">Jira課題キー</option>
+            <option value="url-pattern">URLパターン</option>
+          </select>
+        </div>
+
+        <div class="form-field" id="customJiraFields">
+          <label for="customRuleKeys">Jira課題キー</label>
+          <textarea id="customRuleKeys" placeholder="PROJ-101, PROJ-102"></textarea>
+          <div class="field-help">カンマ区切りまたは改行区切り。親子課題をまとめたいときは、同じ親に属する課題キーを並べてください。</div>
+          <div class="inline-actions">
+            <button class="btn btn-ghost" id="fillJiraKeys" type="button">現在のJiraタブから取得</button>
+          </div>
+        </div>
+
+        <div class="form-field" id="customPatternFields" hidden>
+          <label for="customRulePatterns">URLパターン</label>
+          <textarea id="customRulePatterns" placeholder="figma\.com&#10;miro\.com"></textarea>
+          <div class="field-help">正規表現を改行またはカンマ区切りで入力します。大文字小文字は区別しません。</div>
+        </div>
+
+        <button class="btn btn-tertiary" type="submit">カスタムルールを追加</button>
+      </form>
     </div>
   </div>
 

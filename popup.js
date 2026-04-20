@@ -4,9 +4,20 @@ const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
 const ruleListEl = document.getElementById("ruleList");
 const allWindowsEl = document.getElementById("allWindows");
+const customRuleListEl = document.getElementById("customRuleList");
+const customRuleFormEl = document.getElementById("customRuleForm");
+const customRuleNameEl = document.getElementById("customRuleName");
+const customRuleColorEl = document.getElementById("customRuleColor");
+const customRuleTypeEl = document.getElementById("customRuleType");
+const customRulePatternsEl = document.getElementById("customRulePatterns");
+const customRuleKeysEl = document.getElementById("customRuleKeys");
+const customPatternFieldsEl = document.getElementById("customPatternFields");
+const customJiraFieldsEl = document.getElementById("customJiraFields");
+const fillJiraKeysEl = document.getElementById("fillJiraKeys");
 const STORAGE_KEYS = {
   allWindows: "allWindows",
   enabledRules: "enabledRules",
+  customRules: "customRules",
 };
 
 const RULE_COLORS = {
@@ -22,7 +33,10 @@ const RULE_COLORS = {
   cyan: "#06b6d4",
 };
 
+const ALLOWED_COLORS = ["blue", "cyan", "green", "grey", "orange", "pink", "purple", "red", "yellow"];
+
 let enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
+let customRules = [];
 
 function showStatus(message, type = "success") {
   statusEl.textContent = message;
@@ -36,11 +50,15 @@ function getDefaultSettings() {
   return {
     [STORAGE_KEYS.allWindows]: false,
     [STORAGE_KEYS.enabledRules]: GROUP_RULES.map((rule) => rule.name),
+    [STORAGE_KEYS.customRules]: [],
   };
 }
 
 function getActiveRules() {
-  return GROUP_RULES.filter((rule) => enabledRuleNames.has(rule.name));
+  return [
+    ...GROUP_RULES.filter((rule) => enabledRuleNames.has(rule.name)),
+    ...customRules.filter((rule) => rule.enabled).map(compileCustomRule),
+  ];
 }
 
 function getStorageArea() {
@@ -52,6 +70,7 @@ async function loadSettings() {
   if (!storage) {
     allWindowsEl.checked = false;
     enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
+    customRules = [];
     showStatus("設定保存が使えません。拡張を再読み込みしてください", "error");
     return;
   }
@@ -67,6 +86,8 @@ async function loadSettings() {
   if (enabledRuleNames.size === 0) {
     enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
   }
+
+  customRules = sanitizeCustomRules(settings[STORAGE_KEYS.customRules] ?? []);
 }
 
 async function saveAllWindowsSetting() {
@@ -89,6 +110,128 @@ async function saveEnabledRules() {
       .map((rule) => rule.name)
       .filter((name) => enabledRuleNames.has(name)),
   });
+}
+
+async function saveCustomRules() {
+  const storage = getStorageArea();
+  if (!storage) {
+    return;
+  }
+
+  await storage.set({ [STORAGE_KEYS.customRules]: customRules });
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function parseListInput(value) {
+  return value
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function buildJiraPattern(issueKey) {
+  const escapedKey = escapeRegExp(issueKey.toUpperCase());
+  return `(?:/browse/|[?&]selectedIssue=)${escapedKey}(?:[/?#&]|$)`;
+}
+
+function extractJiraIssueKeys(url) {
+  if (!url) {
+    return [];
+  }
+
+  const matches = new Set();
+
+  for (const match of url.matchAll(/\/browse\/([A-Z][A-Z0-9_]*-\d+)/gi)) {
+    matches.add(match[1].toUpperCase());
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    const selectedIssue = parsedUrl.searchParams.get("selectedIssue");
+    if (selectedIssue && /^[A-Z][A-Z0-9_]*-\d+$/i.test(selectedIssue)) {
+      matches.add(selectedIssue.toUpperCase());
+    }
+  } catch {
+    // URLとして解釈できない場合は browse パスの抽出結果だけ使う
+  }
+
+  return [...matches];
+}
+
+function sanitizeCustomRule(rule) {
+  if (!rule || typeof rule !== "object") {
+    return null;
+  }
+
+  const name = String(rule.name ?? "").trim();
+  const id = String(rule.id ?? "").trim();
+  const type = rule.type === "jira-keys" ? "jira-keys" : "url-pattern";
+  const color = ALLOWED_COLORS.includes(rule.color) ? rule.color : "blue";
+  const enabled = rule.enabled !== false;
+
+  if (!id || !name) {
+    return null;
+  }
+
+  if (type === "jira-keys") {
+    const issueKeys = parseListInput((rule.issueKeys ?? []).join(","))
+      .map((key) => key.toUpperCase())
+      .filter((key) => /^[A-Z][A-Z0-9_]*-\d+$/.test(key));
+
+    if (issueKeys.length === 0) {
+      return null;
+    }
+
+    return { id, name, type, color, enabled, issueKeys };
+  }
+
+  const patterns = parseListInput((rule.patterns ?? []).join("\n"));
+  if (patterns.length === 0) {
+    return null;
+  }
+
+  for (const pattern of patterns) {
+    try {
+      new RegExp(pattern, "i");
+    } catch {
+      return null;
+    }
+  }
+
+  return { id, name, type, color, enabled, patterns };
+}
+
+function sanitizeCustomRules(rules) {
+  return rules
+    .map(sanitizeCustomRule)
+    .filter(Boolean);
+}
+
+function compileCustomRule(rule) {
+  if (rule.type === "jira-keys") {
+    return {
+      name: rule.name,
+      color: rule.color,
+      patterns: rule.issueKeys.map((issueKey) => new RegExp(buildJiraPattern(issueKey), "i")),
+    };
+  }
+
+  return {
+    name: rule.name,
+    color: rule.color,
+    patterns: rule.patterns.map((pattern) => new RegExp(pattern, "i")),
+  };
+}
+
+function createPatternPreview(rule) {
+  if (rule.type === "jira-keys") {
+    return `Jira課題: ${rule.issueKeys.join(", ")}`;
+  }
+
+  return rule.patterns.join(", ");
 }
 
 function renderRules() {
@@ -142,6 +285,138 @@ function renderRules() {
   }
 }
 
+function renderCustomRules() {
+  customRuleListEl.innerHTML = "";
+
+  if (customRules.length === 0) {
+    const empty = document.createElement("div");
+    empty.className = "empty-state";
+    empty.textContent = "カスタムルールはまだありません";
+    customRuleListEl.appendChild(empty);
+    return;
+  }
+
+  for (const rule of customRules) {
+    const item = document.createElement("div");
+    item.className = "rule-item custom-rule-item";
+
+    const label = document.createElement("label");
+    label.className = "rule-label";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = rule.enabled;
+    checkbox.addEventListener("change", async () => {
+      rule.enabled = checkbox.checked;
+      await saveCustomRules();
+    });
+
+    const dot = document.createElement("span");
+    dot.className = "rule-dot";
+    dot.style.background = RULE_COLORS[rule.color] ?? "#9ca3af";
+
+    const text = document.createElement("span");
+    text.className = "rule-text";
+
+    const name = document.createElement("span");
+    name.className = "rule-name";
+    name.textContent = rule.name;
+
+    const meta = document.createElement("span");
+    meta.className = "rule-patterns";
+    meta.textContent = createPatternPreview(rule);
+
+    text.appendChild(name);
+    text.appendChild(meta);
+    label.appendChild(checkbox);
+    label.appendChild(dot);
+    label.appendChild(text);
+
+    const deleteButton = document.createElement("button");
+    deleteButton.type = "button";
+    deleteButton.className = "rule-delete";
+    deleteButton.textContent = "削除";
+    deleteButton.addEventListener("click", async () => {
+      customRules = customRules.filter((customRule) => customRule.id !== rule.id);
+      await saveCustomRules();
+      renderCustomRules();
+    });
+
+    item.appendChild(label);
+    item.appendChild(deleteButton);
+    customRuleListEl.appendChild(item);
+  }
+}
+
+function syncCustomRuleTypeFields() {
+  const isJiraMode = customRuleTypeEl.value === "jira-keys";
+  customPatternFieldsEl.hidden = isJiraMode;
+  customJiraFieldsEl.hidden = !isJiraMode;
+}
+
+function resetCustomRuleForm() {
+  customRuleFormEl.reset();
+  customRuleColorEl.value = "blue";
+  customRuleTypeEl.value = "jira-keys";
+  syncCustomRuleTypeFields();
+}
+
+function buildCustomRuleFromForm() {
+  const name = customRuleNameEl.value.trim();
+  if (!name) {
+    throw new Error("グループ名を入力してください");
+  }
+
+  const color = customRuleColorEl.value;
+  if (!ALLOWED_COLORS.includes(color)) {
+    throw new Error("使用できない色です");
+  }
+
+  const type = customRuleTypeEl.value;
+  const base = {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name,
+    color,
+    enabled: true,
+  };
+
+  if (type === "jira-keys") {
+    const issueKeys = parseListInput(customRuleKeysEl.value)
+      .map((key) => key.toUpperCase())
+      .filter((key) => /^[A-Z][A-Z0-9_]*-\d+$/.test(key));
+
+    if (issueKeys.length === 0) {
+      throw new Error("Jira課題キーを1件以上入力してください");
+    }
+
+    return { ...base, type, issueKeys };
+  }
+
+  const patterns = parseListInput(customRulePatternsEl.value);
+  if (patterns.length === 0) {
+    throw new Error("URLパターンを1件以上入力してください");
+  }
+
+  for (const pattern of patterns) {
+    try {
+      new RegExp(pattern, "i");
+    } catch {
+      throw new Error(`無効な正規表現です: ${pattern}`);
+    }
+  }
+
+  return { ...base, type, patterns };
+}
+
+function mergeIssueKeysIntoField(issueKeys) {
+  const merged = new Set([
+    ...parseListInput(customRuleKeysEl.value).map((key) => key.toUpperCase()),
+    ...issueKeys.map((key) => key.toUpperCase()),
+  ]);
+
+  customRuleKeysEl.value = [...merged].join(", ");
+}
+
 async function getTargetTabs() {
   return chrome.tabs.query(allWindowsEl.checked ? {} : { currentWindow: true });
 }
@@ -169,11 +444,52 @@ async function init() {
   await loadSettings();
   await updateTabCount();
   renderRules();
+  renderCustomRules();
+  resetCustomRuleForm();
 }
 
 allWindowsEl.addEventListener("change", async () => {
   await saveAllWindowsSetting();
   await updateTabCount();
+});
+
+customRuleTypeEl.addEventListener("change", syncCustomRuleTypeFields);
+
+customRuleFormEl.addEventListener("submit", async (event) => {
+  event.preventDefault();
+
+  try {
+    const customRule = buildCustomRuleFromForm();
+    if (customRules.some((rule) => rule.name === customRule.name)) {
+      throw new Error("同じグループ名のカスタムルールは追加できません");
+    }
+    customRules.push(customRule);
+    await saveCustomRules();
+    renderCustomRules();
+    resetCustomRuleForm();
+    showStatus(`カスタムルール「${customRule.name}」を追加しました`, "success");
+  } catch (error) {
+    showStatus(`エラー: ${error.message}`, "error");
+  }
+});
+
+fillJiraKeysEl.addEventListener("click", async () => {
+  try {
+    const tabs = await getTargetTabs();
+    const issueKeys = [...new Set(tabs.flatMap((tab) => extractJiraIssueKeys(tab.url)))];
+
+    if (issueKeys.length === 0) {
+      showStatus("現在の対象タブから Jira 課題キーを見つけられませんでした", "error");
+      return;
+    }
+
+    mergeIssueKeysIntoField(issueKeys);
+    customRuleTypeEl.value = "jira-keys";
+    syncCustomRuleTypeFields();
+    showStatus(`${issueKeys.length} 件の Jira 課題キーを入力欄に追加しました`, "success");
+  } catch (error) {
+    showStatus(`エラー: ${error.message}`, "error");
+  }
 });
 
 document.getElementById("btnDedup").addEventListener("click", async () => {
