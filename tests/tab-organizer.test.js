@@ -43,6 +43,10 @@ describe("matchGroup", () => {
     expect(matchGroup("https://docs.google.com/document/d/abc")).toMatchObject({ name: "Google" });
   });
 
+  test("Geminiのドメインを検出する", () => {
+    expect(matchGroup("https://gemini.google.com/app")).toMatchObject({ name: "Gemini" });
+  });
+
   test("ChatGPTのドメインを検出する", () => {
     expect(matchGroup("https://chatgpt.com/c/session-id")).toMatchObject({ name: "ChatGPT" });
   });

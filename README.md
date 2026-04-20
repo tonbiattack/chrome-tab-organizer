@@ -65,6 +65,7 @@ Jira の使い方の例:
 | GitHub | `github.com` | 紫 |
 | Slack | `app.slack.com` | 黄 |
 | Notion | `notion.so` | グレー |
+| Gemini | `gemini.google.com` | シアン |
 | Google | `google.com`, `docs.google.com`, `drive.google.com` | 緑 |
 | ChatGPT | `chatgpt.com`, `chat.openai.com` | シアン |
 | Qiita | `qiita.com` | 緑 |
