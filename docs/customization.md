@@ -80,6 +80,7 @@
 | GitHub | `github.com` | purple |
 | Slack | `app.slack.com` | yellow |
 | Notion | `notion.so` | grey |
+| Gemini | `gemini.google.com` | cyan |
 | Google | `google.com`, `docs.google.com`, `drive.google.com` | green |
 | ChatGPT | `chatgpt.com`, `chat.openai.com` | cyan |
 | Qiita | `qiita.com` | green |

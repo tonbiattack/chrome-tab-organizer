@@ -25,6 +25,11 @@
     "patterns": ["notion\\.so"]
   },
   {
+    "name": "Gemini",
+    "color": "cyan",
+    "patterns": ["gemini\\.google\\.com"]
+  },
+  {
     "name": "Google",
     "color": "green",
     "patterns": ["google\\.com", "docs\\.google\\.com", "drive\\.google\\.com"]
