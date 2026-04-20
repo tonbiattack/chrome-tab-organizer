@@ -9,6 +9,7 @@ const GROUP_RULES = [
   { name: "Qiita",   color: "green",  patterns: [/qiita\.com/i] },
   { name: "Zenn",    color: "blue",   patterns: [/zenn\.dev/i] },
   { name: "Amazon",  color: "orange", patterns: [/amazon\.co\.jp/i, /amazon\.com/i, /amzn\.to/i] },
+  { name: "YouTube", color: "red",    patterns: [/youtube\.com/i, /youtu\.be/i] },
 ];
 
 function normalizeUrl(url) {
