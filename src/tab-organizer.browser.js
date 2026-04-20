@@ -31,6 +31,10 @@ function matchGroup(url, groupRules = GROUP_RULES) {
   return null;
 }
 
+function getRuleNames(groupRules = GROUP_RULES) {
+  return new Set(groupRules.map((rule) => rule.name));
+}
+
 async function removeDuplicateTabs(tabs) {
   const seen = new Map();
   const toClose = [];
@@ -60,7 +64,7 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { coll
   );
 
   // 手動グループ（ルール名と一致しないタイトルのグループ）に属するタブは操作しない
-  const ruleNames = new Set(groupRules.map((r) => r.name));
+  const ruleNames = getRuleNames(groupRules);
   const existingGroups = await chrome.tabGroups.query({ windowId });
   const manualGroupTabIds = new Set(
     filteredTabs
@@ -124,16 +128,21 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { coll
   return { groupCount };
 }
 
-async function ungroupAllTabs(allWindows) {
+async function ungroupAllTabs(allWindows, groupRules = GROUP_RULES) {
   const tabs = await chrome.tabs.query(allWindows ? {} : { currentWindow: true });
-  const groupIds = [...new Set(tabs.map((t) => t.groupId).filter((id) => id !== -1))];
-  for (const groupId of groupIds) {
+  const groups = await chrome.tabGroups.query(allWindows ? {} : { windowId: chrome.windows.WINDOW_ID_CURRENT });
+  const ruleNames = getRuleNames(groupRules);
+  const managedGroupIds = groups
+    .filter((group) => ruleNames.has(group.title))
+    .map((group) => group.id);
+
+  for (const groupId of managedGroupIds) {
     const tabIds = tabs.filter((t) => t.groupId === groupId).map((t) => t.id);
     if (tabIds.length > 0) {
       await chrome.tabs.ungroup(tabIds);
     }
   }
-  return { ungrouped: groupIds.length };
+  return { ungrouped: managedGroupIds.length };
 }
 
 export { GROUP_RULES, normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs };

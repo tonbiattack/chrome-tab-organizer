@@ -64,6 +64,13 @@ function getActiveRules() {
   ];
 }
 
+function getManagedRules() {
+  return [
+    ...customRules.map(compileCustomRule),
+    ...GROUP_RULES,
+  ];
+}
+
 function getStorageArea() {
   return chrome?.storage?.local ?? null;
 }
@@ -456,7 +463,7 @@ collapseGroupsEl.addEventListener("change", saveCollapseGroupsSetting);
 
 document.getElementById("btnUngroupAll").addEventListener("click", async () => {
   try {
-    const { ungrouped } = await ungroupAllTabs(allWindowsEl.checked);
+    const { ungrouped } = await ungroupAllTabs(allWindowsEl.checked, getManagedRules());
     if (ungrouped === 0) {
       showStatus("解除するグループはありませんでした", "success");
     } else {
