@@ -4,6 +4,7 @@ const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
 const ruleListEl = document.getElementById("ruleList");
 const allWindowsEl = document.getElementById("allWindows");
+const collapseGroupsEl = document.getElementById("collapseGroups");
 const customRuleListEl = document.getElementById("customRuleList");
 const customRuleFormEl = document.getElementById("customRuleForm");
 const customRuleNameEl = document.getElementById("customRuleName");
@@ -16,6 +17,7 @@ const customJiraFieldsEl = document.getElementById("customJiraFields");
 const fillJiraKeysEl = document.getElementById("fillJiraKeys");
 const STORAGE_KEYS = {
   allWindows: "allWindows",
+  collapseGroups: "collapseGroups",
   enabledRules: "enabledRules",
   customRules: "customRules",
 };
@@ -49,6 +51,7 @@ function showStatus(message, type = "success") {
 function getDefaultSettings() {
   return {
     [STORAGE_KEYS.allWindows]: false,
+    [STORAGE_KEYS.collapseGroups]: false,
     [STORAGE_KEYS.enabledRules]: GROUP_RULES.map((rule) => rule.name),
     [STORAGE_KEYS.customRules]: [],
   };
@@ -77,6 +80,7 @@ async function loadSettings() {
 
   const settings = await storage.get(getDefaultSettings());
   allWindowsEl.checked = Boolean(settings[STORAGE_KEYS.allWindows]);
+  collapseGroupsEl.checked = Boolean(settings[STORAGE_KEYS.collapseGroups]);
 
   const validRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
   enabledRuleNames = new Set(
@@ -92,11 +96,14 @@ async function loadSettings() {
 
 async function saveAllWindowsSetting() {
   const storage = getStorageArea();
-  if (!storage) {
-    return;
-  }
-
+  if (!storage) return;
   await storage.set({ [STORAGE_KEYS.allWindows]: allWindowsEl.checked });
+}
+
+async function saveCollapseGroupsSetting() {
+  const storage = getStorageArea();
+  if (!storage) return;
+  await storage.set({ [STORAGE_KEYS.collapseGroups]: collapseGroupsEl.checked });
 }
 
 async function saveEnabledRules() {
@@ -453,6 +460,8 @@ allWindowsEl.addEventListener("change", async () => {
   await updateTabCount();
 });
 
+collapseGroupsEl.addEventListener("change", saveCollapseGroupsSetting);
+
 customRuleTypeEl.addEventListener("change", syncCustomRuleTypeFields);
 
 customRuleFormEl.addEventListener("submit", async (event) => {
@@ -518,8 +527,9 @@ document.getElementById("btnSort").addEventListener("click", async () => {
   const windowsMap = groupTabsByWindow(tabs);
   try {
     let totalGroups = 0;
+    const collapsed = collapseGroupsEl.checked;
     for (const [windowId, windowTabs] of windowsMap) {
-      const { groupCount } = await sortAndGroupTabs(windowTabs, windowId, activeRules);
+      const { groupCount } = await sortAndGroupTabs(windowTabs, windowId, activeRules, { collapsed });
       totalGroups += groupCount;
     }
     if (windowsMap.size > 1) {
