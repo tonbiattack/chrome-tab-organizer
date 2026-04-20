@@ -1,0 +1,197 @@
+const STORAGE_KEYS = {
+  allWindows: "allWindows",
+  collapseGroups: "collapseGroups",
+  enabledRules: "enabledRules",
+  customRules: "customRules",
+};
+
+const ALLOWED_COLORS = ["blue", "cyan", "green", "grey", "orange", "pink", "purple", "red", "yellow"];
+
+function getDefaultSettings(groupRules) {
+  return {
+    [STORAGE_KEYS.allWindows]: false,
+    [STORAGE_KEYS.collapseGroups]: false,
+    [STORAGE_KEYS.enabledRules]: groupRules.map((rule) => rule.name),
+    [STORAGE_KEYS.customRules]: [],
+  };
+}
+
+function buildEnabledRuleNames(enabledRuleNames, groupRules) {
+  const validRuleNames = new Set(groupRules.map((rule) => rule.name));
+  const filteredNames = (enabledRuleNames ?? []).filter((name) => validRuleNames.has(name));
+  return new Set(filteredNames);
+}
+
+function resolvePopupSettings(settings, groupRules) {
+  const enabledRuleNames = buildEnabledRuleNames(settings[STORAGE_KEYS.enabledRules], groupRules);
+
+  return {
+    allWindows: Boolean(settings[STORAGE_KEYS.allWindows]),
+    collapseGroups: Boolean(settings[STORAGE_KEYS.collapseGroups]),
+    enabledRuleNames: enabledRuleNames.size > 0
+      ? enabledRuleNames
+      : new Set(groupRules.map((rule) => rule.name)),
+    customRules: sanitizeCustomRules(settings[STORAGE_KEYS.customRules] ?? []),
+  };
+}
+
+function buildEnabledRulesForSave(enabledRuleNames, groupRules) {
+  return groupRules
+    .map((rule) => rule.name)
+    .filter((name) => enabledRuleNames.has(name));
+}
+
+function getActiveRules(groupRules, enabledRuleNames, customRules) {
+  return [
+    ...customRules.filter((rule) => rule.enabled).map(compileCustomRule),
+    ...groupRules.filter((rule) => enabledRuleNames.has(rule.name)),
+  ];
+}
+
+function getManagedRules(groupRules, customRules) {
+  return [
+    ...customRules.map(compileCustomRule),
+    ...groupRules,
+  ];
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function parseListInput(value) {
+  return value
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function buildJiraPattern(issueKey) {
+  const escapedKey = escapeRegExp(issueKey.toUpperCase());
+  return `(?:/browse/|[?&]selectedIssue=)${escapedKey}(?:[/?#&]|$)`;
+}
+
+function extractJiraIssueKeys(url) {
+  if (!url) {
+    return [];
+  }
+
+  const matches = new Set();
+
+  for (const match of url.matchAll(/\/browse\/([A-Z][A-Z0-9_]*-\d+)/gi)) {
+    matches.add(match[1].toUpperCase());
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    const selectedIssue = parsedUrl.searchParams.get("selectedIssue");
+    if (selectedIssue && /^[A-Z][A-Z0-9_]*-\d+$/i.test(selectedIssue)) {
+      matches.add(selectedIssue.toUpperCase());
+    }
+  } catch {
+    // URLとして解釈できない場合は browse パスの抽出結果だけ使う
+  }
+
+  return [...matches];
+}
+
+function sanitizeCustomRule(rule) {
+  if (!rule || typeof rule !== "object") {
+    return null;
+  }
+
+  const name = String(rule.name ?? "").trim();
+  const id = String(rule.id ?? "").trim();
+  const type = rule.type === "jira-keys" ? "jira-keys" : "url-pattern";
+  const color = ALLOWED_COLORS.includes(rule.color) ? rule.color : "blue";
+  const enabled = rule.enabled !== false;
+
+  if (!id || !name) {
+    return null;
+  }
+
+  if (type === "jira-keys") {
+    const issueKeys = parseListInput((rule.issueKeys ?? []).join(","))
+      .map((key) => key.toUpperCase())
+      .filter((key) => /^[A-Z][A-Z0-9_]*-\d+$/.test(key));
+
+    if (issueKeys.length === 0) {
+      return null;
+    }
+
+    return { id, name, type, color, enabled, issueKeys };
+  }
+
+  const patterns = parseListInput((rule.patterns ?? []).join("\n"));
+  if (patterns.length === 0) {
+    return null;
+  }
+
+  for (const pattern of patterns) {
+    try {
+      new RegExp(pattern, "i");
+    } catch {
+      return null;
+    }
+  }
+
+  return { id, name, type, color, enabled, patterns };
+}
+
+function sanitizeCustomRules(rules) {
+  return rules
+    .map(sanitizeCustomRule)
+    .filter(Boolean);
+}
+
+function compileCustomRule(rule) {
+  if (rule.type === "jira-keys") {
+    return {
+      name: rule.name,
+      color: rule.color,
+      patterns: rule.issueKeys.map((issueKey) => new RegExp(buildJiraPattern(issueKey), "i")),
+    };
+  }
+
+  return {
+    name: rule.name,
+    color: rule.color,
+    patterns: rule.patterns.map((pattern) => new RegExp(pattern, "i")),
+  };
+}
+
+function createPatternPreview(rule) {
+  if (rule.type === "jira-keys") {
+    return `Jira課題: ${rule.issueKeys.join(", ")}`;
+  }
+
+  return rule.patterns.join(", ");
+}
+
+function mergeIssueKeys(currentValue, issueKeys) {
+  const merged = new Set([
+    ...parseListInput(currentValue).map((key) => key.toUpperCase()),
+    ...issueKeys.map((key) => key.toUpperCase()),
+  ]);
+  return [...merged].join(", ");
+}
+
+export {
+  STORAGE_KEYS,
+  ALLOWED_COLORS,
+  getDefaultSettings,
+  buildEnabledRuleNames,
+  resolvePopupSettings,
+  buildEnabledRulesForSave,
+  getActiveRules,
+  getManagedRules,
+  escapeRegExp,
+  parseListInput,
+  buildJiraPattern,
+  extractJiraIssueKeys,
+  sanitizeCustomRule,
+  sanitizeCustomRules,
+  compileCustomRule,
+  createPatternPreview,
+  mergeIssueKeys,
+};
