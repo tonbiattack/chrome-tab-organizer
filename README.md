@@ -42,6 +42,9 @@
 | Notion | `notion.so` | グレー |
 | Google | `google.com`, `docs.google.com`, `drive.google.com` | 緑 |
 | ChatGPT | `chatgpt.com`, `chat.openai.com` | シアン |
+| Qiita | `qiita.com` | 緑 |
+| Zenn | `zenn.dev` | 青 |
+| Amazon | `amazon.co.jp`, `amazon.com`, `amzn.to` | オレンジ |
 
 ルールの追加・変更方法は [docs/customization.md](docs/customization.md) にまとめています。
 

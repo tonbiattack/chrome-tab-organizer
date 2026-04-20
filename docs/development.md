@@ -46,10 +46,10 @@ npm run test:coverage
 既存テストでは次を確認しています。
 
 - URL 正規化
-- サービス判定
+- サービス判定（Jira / GitHub / Slack / Notion / Google / ChatGPT / Qiita / Zenn / Amazon）
 - 重複タブ削除
 - タブ並び替えとグループ化
-- ルール定義の整合性
+- ルール定義の整合性（名前の重複なし・Chrome 許可色のみ使用）
 
 ## Chrome での確認手順
 

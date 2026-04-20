@@ -35,22 +35,35 @@
 
 このプロジェクトではテスト用の CommonJS 実装と、popup 用の ESM 実装を分けているため、両方を更新する必要があります。
 
+## 現在のルール一覧
+
+| サービス | パターン | 色 |
+| --- | --- | --- |
+| Jira | `jira.*`, `atlassian.net` | blue |
+| GitHub | `github.com` | purple |
+| Slack | `app.slack.com` | yellow |
+| Notion | `notion.so` | grey |
+| Google | `google.com`, `docs.google.com`, `drive.google.com` | green |
+| ChatGPT | `chatgpt.com`, `chat.openai.com` | cyan |
+| Qiita | `qiita.com` | green |
+| Zenn | `zenn.dev` | blue |
+| Amazon | `amazon.co.jp`, `amazon.com`, `amzn.to` | orange |
+
 ## 色の候補
 
-popup 側では次の色名に対応しています。
+Chrome のタブグループが受け付ける色名は次のとおりです。
 
 - `blue`
-- `purple`
-- `yellow`
-- `grey`
+- `cyan`
 - `green`
-- `teal`
-- `red`
+- `grey`
 - `orange`
 - `pink`
-- `cyan`
+- `purple`
+- `red`
+- `yellow`
 
-未定義の色名を指定した場合、popup の凡例表示ではフォールバック色が使われます。
+`teal` は Chrome API では使えないため指定しないでください。未定義の色名を指定した場合、popup の凡例表示ではフォールバック色が使われます。
 
 ## 正規表現を書くときの注意
 
