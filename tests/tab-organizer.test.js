@@ -185,6 +185,7 @@ describe("sortAndGroupTabs", () => {
         update: jest.fn(async (groupId, props) => {
           updateHistory.push({ groupId, ...props });
         }),
+        query: jest.fn(async () => []),
       },
     };
   });
@@ -200,13 +201,28 @@ describe("sortAndGroupTabs", () => {
     expect(groupHistory).toHaveLength(2);
   });
 
-  test("既存グループのタブをungroupする", async () => {
+  test("ルール名と一致する既存グループのタブをungroupする", async () => {
     const tabs = [
       { id: 1, url: "https://github.com/repo", groupId: 10 },
       { id: 2, url: "https://example.com/", groupId: -1 },
     ];
+    global.chrome.tabGroups.query = jest.fn(async () => [
+      { id: 10, title: "GitHub", windowId: 1 },
+    ]);
     await sortAndGroupTabs(tabs, 1);
     expect(ungroupHistory).toContain(1);
+  });
+
+  test("手動で作ったグループ（ルール名と一致しない）はungroupしない", async () => {
+    const tabs = [
+      { id: 1, url: "https://github.com/repo", groupId: 20 },
+      { id: 2, url: "https://example.com/", groupId: -1 },
+    ];
+    global.chrome.tabGroups.query = jest.fn(async () => [
+      { id: 20, title: "作業中", windowId: 1 },
+    ]);
+    await sortAndGroupTabs(tabs, 1);
+    expect(ungroupHistory).not.toContain(1);
   });
 
   test("chrome:// URLはスキップする", async () => {

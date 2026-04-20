@@ -80,11 +80,21 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES) {
     (t) => t.url && !t.url.startsWith("chrome://") && !t.url.startsWith("chrome-extension://")
   );
 
-  // グループごとにタブを分類
+  // 手動グループ（ルール名と一致しないタイトルのグループ）に属するタブは操作しない
+  const ruleNames = new Set(groupRules.map((r) => r.name));
+  const existingGroups = await chrome.tabGroups.query({ windowId });
+  const manualGroupTabIds = new Set(
+    filteredTabs
+      .filter((t) => t.groupId !== -1 && existingGroups.some((g) => g.id === t.groupId && !ruleNames.has(g.title)))
+      .map((t) => t.id)
+  );
+
+  // グループごとにタブを分類（手動グループのタブは除外）
   const groups = new Map();
   const others = [];
 
   for (const tab of filteredTabs) {
+    if (manualGroupTabIds.has(tab.id)) continue;
     const rule = matchGroup(tab.url, groupRules);
     if (rule) {
       if (!groups.has(rule.name)) {
@@ -98,13 +108,11 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES) {
 
   // タブを順番に並び替える（グループ順 → Others）
   let index = 0;
-  const orderedTabIds = [];
 
   for (const [, { tabs: groupTabs }] of groups) {
     for (const tab of groupTabs) {
       await chrome.tabs.move(tab.id, { index });
       index++;
-      orderedTabIds.push({ tabId: tab.id });
     }
   }
 
@@ -113,12 +121,13 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES) {
     index++;
   }
 
-  // 既存のタブグループを解除してから新しくグループ化
-  const existingGroupIds = [...new Set(filteredTabs.map((t) => t.groupId).filter((id) => id !== -1))];
-  for (const groupId of existingGroupIds) {
-    const groupTabs = filteredTabs.filter((t) => t.groupId === groupId).map((t) => t.id);
-    if (groupTabs.length > 0) {
-      await chrome.tabs.ungroup(groupTabs);
+  // この拡張が管理するグループ（ルール名と一致するタイトル）だけを解除する
+  for (const group of existingGroups) {
+    if (ruleNames.has(group.title)) {
+      const groupTabs = filteredTabs.filter((t) => t.groupId === group.id).map((t) => t.id);
+      if (groupTabs.length > 0) {
+        await chrome.tabs.ungroup(groupTabs);
+      }
     }
   }
 
