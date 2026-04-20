@@ -87,10 +87,6 @@ async function loadSettings() {
     (settings[STORAGE_KEYS.enabledRules] ?? []).filter((name) => validRuleNames.has(name))
   );
 
-  if (enabledRuleNames.size === 0) {
-    enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
-  }
-
   customRules = sanitizeCustomRules(settings[STORAGE_KEYS.customRules] ?? []);
 }
 
@@ -256,10 +252,6 @@ function renderRules() {
     checkbox.addEventListener("change", async () => {
       if (checkbox.checked) {
         enabledRuleNames.add(rule.name);
-      } else if (enabledRuleNames.size === 1) {
-        checkbox.checked = true;
-        showStatus("少なくとも1つのルールを有効にしてください", "error");
-        return;
       } else {
         enabledRuleNames.delete(rule.name);
       }
@@ -462,6 +454,18 @@ allWindowsEl.addEventListener("change", async () => {
 
 collapseGroupsEl.addEventListener("change", saveCollapseGroupsSetting);
 
+document.getElementById("btnCheckAll").addEventListener("click", async () => {
+  enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
+  await saveEnabledRules();
+  renderRules();
+});
+
+document.getElementById("btnUncheckAll").addEventListener("click", async () => {
+  enabledRuleNames = new Set();
+  await saveEnabledRules();
+  renderRules();
+});
+
 customRuleTypeEl.addEventListener("change", syncCustomRuleTypeFields);
 
 customRuleFormEl.addEventListener("submit", async (event) => {
@@ -518,11 +522,6 @@ document.getElementById("btnDedup").addEventListener("click", async () => {
 
 document.getElementById("btnSort").addEventListener("click", async () => {
   const activeRules = getActiveRules();
-  if (activeRules.length === 0) {
-    showStatus("有効なグループルールがありません", "error");
-    return;
-  }
-
   const tabs = await getTargetTabs();
   const windowsMap = groupTabsByWindow(tabs);
   try {
