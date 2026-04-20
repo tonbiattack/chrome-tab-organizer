@@ -32,7 +32,8 @@
 
 - 現在のウィンドウ内の通常タブを対象にします
 - ルールに一致したサービスごとにタブをまとめます
-- 既存のタブグループがある場合はいったん解除して作り直します
+- 既存のタブグループがある場合は、ルール名と一致するグループだけを解除して再構成します
+- 手動で作ったグループは、タイトルがルール名と一致しない限り維持されます
 - ルールに一致しないタブは末尾に残します
 
 ### 3. 設定の保存
@@ -118,11 +119,13 @@ popup では次も操作できます。
 ├── manifest.json
 ├── popup.html
 ├── popup.js
-├── background.js
 ├── src/
+│   ├── group-rules.json
+│   ├── popup-logic.mjs
 │   ├── tab-organizer.js
 │   └── tab-organizer.browser.js
 ├── tests/
+│   ├── popup-logic.test.js
 │   └── tab-organizer.test.js
 ├── scripts/
 │   └── generate-icons.js
@@ -133,10 +136,13 @@ popup では次も操作できます。
 
 主要ファイル:
 
+- `src/group-rules.json`: 標準グループルールの単一定義
+- `src/popup-logic.mjs`: popup で使う純粋ロジック
 - `src/tab-organizer.js`: テスト対象の CommonJS 実装
 - `src/tab-organizer.browser.js`: popup から import するブラウザ向け ESM 実装
 - `popup.js`: popup UI の初期化とボタン処理
 - `popup.html`: popup UI とカスタムルール入力フォーム
+- `tests/popup-logic.test.js`: popup ロジックのユニットテスト
 - `tests/tab-organizer.test.js`: コアロジックのユニットテスト
 
 ## セットアップとテスト
