@@ -158,6 +158,29 @@
       border-radius: 50%;
       flex-shrink: 0;
     }
+
+    .window-scope {
+      padding: 6px 16px;
+      background: #eef2ff;
+      border-bottom: 1px solid #e0e7ff;
+      font-size: 12px;
+    }
+
+    .scope-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      color: #4338ca;
+      user-select: none;
+    }
+
+    .scope-label input[type="checkbox"] {
+      accent-color: #2563eb;
+      width: 14px;
+      height: 14px;
+      cursor: pointer;
+    }
   </style>
 </head>
 <body>
@@ -166,6 +189,13 @@
     <h1>Tab Organizer</h1>
     <span class="tab-count" id="tabCount">読み込み中...</span>
   </header>
+
+  <div class="window-scope">
+    <label class="scope-label">
+      <input type="checkbox" id="allWindows">
+      <span>全ウィンドウを対象にする</span>
+    </label>
+  </div>
 
   <div class="content">
     <button class="btn btn-primary" id="btnDedup">
