@@ -284,6 +284,15 @@
       background: #e0e7ff;
     }
 
+    .btn-danger {
+      background: #ef4444;
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: #dc2626;
+    }
+
     .empty-state {
       font-size: 12px;
       color: #6b7280;
@@ -356,6 +365,14 @@
       <input type="checkbox" id="collapseGroups">
       <span>整理後にグループを折りたたむ</span>
     </label>
+
+    <button class="btn btn-danger" id="btnUngroupAll">
+      <span class="btn-icon">🗑️</span>
+      <span>
+        グループをすべて解除
+        <span class="btn-desc">すべてのタブグループを解除する</span>
+      </span>
+    </button>
 
     <div class="divider"></div>
 

@@ -1,4 +1,4 @@
-const { normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, GROUP_RULES } = require("../src/tab-organizer");
+const { normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs, GROUP_RULES } = require("../src/tab-organizer");
 
 // --- normalizeUrl ---
 
@@ -251,6 +251,61 @@ describe("sortAndGroupTabs", () => {
     for (const rule of GROUP_RULES) {
       expect(allowedColors.has(rule.color)).toBe(true);
     }
+  });
+});
+
+// --- ungroupAllTabs ---
+
+describe("ungroupAllTabs", () => {
+  beforeEach(() => {
+    global.chrome = {
+      windows: {
+        WINDOW_ID_CURRENT: -2,
+      },
+      tabs: {
+        query: jest.fn(async () => [
+          { id: 1, groupId: 10 },
+          { id: 2, groupId: 10 },
+          { id: 3, groupId: 20 },
+          { id: 4, groupId: -1 },
+        ]),
+        ungroup: jest.fn(async () => {}),
+      },
+      tabGroups: {
+        query: jest.fn(async () => [
+          { id: 10, title: "GitHub", windowId: 1 },
+          { id: 20, title: "作業中", windowId: 1 },
+        ]),
+      },
+    };
+  });
+
+  test("拡張が管理するグループだけを解除する", async () => {
+    const { ungrouped } = await ungroupAllTabs(false);
+    expect(ungrouped).toBe(1);
+    expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(1);
+    expect(global.chrome.tabs.ungroup).toHaveBeenCalledWith([1, 2]);
+  });
+
+  test("管理対象グループがなければ解除しない", async () => {
+    global.chrome.tabGroups.query = jest.fn(async () => [
+      { id: 20, title: "作業中", windowId: 1 },
+    ]);
+    const { ungrouped } = await ungroupAllTabs(false);
+    expect(ungrouped).toBe(0);
+    expect(global.chrome.tabs.ungroup).not.toHaveBeenCalled();
+  });
+
+  test("allWindows=true のとき全ウィンドウを対象にクエリする", async () => {
+    await ungroupAllTabs(true);
+    expect(global.chrome.tabs.query).toHaveBeenCalledWith({});
+    expect(global.chrome.tabGroups.query).toHaveBeenCalledWith({});
+  });
+
+  test("allWindows=false のとき現在のウィンドウのみクエリする", async () => {
+    await ungroupAllTabs(false);
+    expect(global.chrome.tabs.query).toHaveBeenCalledWith({ currentWindow: true });
+    expect(global.chrome.tabGroups.query).toHaveBeenCalledWith({ windowId: -2 });
   });
 });
 

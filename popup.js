@@ -1,4 +1,4 @@
-import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs } from "./src/tab-organizer.browser.js";
+import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs } from "./src/tab-organizer.browser.js";
 
 const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
@@ -61,6 +61,13 @@ function getActiveRules() {
   return [
     ...customRules.filter((rule) => rule.enabled).map(compileCustomRule),
     ...GROUP_RULES.filter((rule) => enabledRuleNames.has(rule.name)),
+  ];
+}
+
+function getManagedRules() {
+  return [
+    ...customRules.map(compileCustomRule),
+    ...GROUP_RULES,
   ];
 }
 
@@ -453,6 +460,19 @@ allWindowsEl.addEventListener("change", async () => {
 });
 
 collapseGroupsEl.addEventListener("change", saveCollapseGroupsSetting);
+
+document.getElementById("btnUngroupAll").addEventListener("click", async () => {
+  try {
+    const { ungrouped } = await ungroupAllTabs(allWindowsEl.checked, getManagedRules());
+    if (ungrouped === 0) {
+      showStatus("解除するグループはありませんでした", "success");
+    } else {
+      showStatus(`${ungrouped} 件のグループを解除しました`, "success");
+    }
+  } catch (e) {
+    showStatus(`エラー: ${e.message}`, "error");
+  }
+});
 
 document.getElementById("btnCheckAll").addEventListener("click", async () => {
   enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
