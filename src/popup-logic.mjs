@@ -23,14 +23,15 @@ function buildEnabledRuleNames(enabledRuleNames, groupRules) {
 }
 
 function resolvePopupSettings(settings, groupRules) {
-  const enabledRuleNames = buildEnabledRuleNames(settings[STORAGE_KEYS.enabledRules], groupRules);
+  const rawEnabledRules = settings[STORAGE_KEYS.enabledRules];
+  const enabledRuleNames = buildEnabledRuleNames(rawEnabledRules, groupRules);
 
   return {
     allWindows: Boolean(settings[STORAGE_KEYS.allWindows]),
     collapseGroups: Boolean(settings[STORAGE_KEYS.collapseGroups]),
-    enabledRuleNames: enabledRuleNames.size > 0
-      ? enabledRuleNames
-      : new Set(groupRules.map((rule) => rule.name)),
+    enabledRuleNames: rawEnabledRules === undefined
+      ? new Set(groupRules.map((rule) => rule.name))
+      : enabledRuleNames,
     customRules: sanitizeCustomRules(settings[STORAGE_KEYS.customRules] ?? []),
   };
 }

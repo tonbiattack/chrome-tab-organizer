@@ -42,7 +42,17 @@ describe("popup logic", () => {
       ]);
     });
 
-    test("標準ルールがすべて無効ならデフォルトで全ルール有効に戻す", () => {
+    test("enabledRules が未設定ならデフォルトで全ルール有効にする", () => {
+      const resolved = popupLogic.resolvePopupSettings({
+        allWindows: false,
+        collapseGroups: false,
+        customRules: [],
+      }, GROUP_RULES);
+
+      expect([...resolved.enabledRuleNames]).toEqual(GROUP_RULES.map((rule) => rule.name));
+    });
+
+    test("標準ルールがすべて無効の保存状態はそのまま復元する", () => {
       const resolved = popupLogic.resolvePopupSettings({
         allWindows: false,
         collapseGroups: false,
@@ -50,7 +60,7 @@ describe("popup logic", () => {
         customRules: [],
       }, GROUP_RULES);
 
-      expect([...resolved.enabledRuleNames]).toEqual(GROUP_RULES.map((rule) => rule.name));
+      expect([...resolved.enabledRuleNames]).toEqual([]);
     });
   });
 
