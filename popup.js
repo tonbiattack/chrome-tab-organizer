@@ -3,6 +3,7 @@ import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs } from "./src/tab-or
 const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
 const ruleListEl = document.getElementById("ruleList");
+const allWindowsEl = document.getElementById("allWindows");
 
 const RULE_COLORS = {
   blue: "#3b82f6",
@@ -44,18 +45,38 @@ function renderRules() {
   }
 }
 
-async function getCurrentWindowTabs() {
-  return chrome.tabs.query({ currentWindow: true });
+async function getTargetTabs() {
+  return chrome.tabs.query(allWindowsEl.checked ? {} : { currentWindow: true });
+}
+
+function groupTabsByWindow(tabs) {
+  const map = new Map();
+  for (const tab of tabs) {
+    if (!map.has(tab.windowId)) map.set(tab.windowId, []);
+    map.get(tab.windowId).push(tab);
+  }
+  return map;
+}
+
+async function updateTabCount() {
+  const tabs = await getTargetTabs();
+  if (allWindowsEl.checked) {
+    const windowCount = new Set(tabs.map((t) => t.windowId)).size;
+    tabCountEl.textContent = `${tabs.length} タブ (${windowCount} ウィンドウ)`;
+  } else {
+    tabCountEl.textContent = `${tabs.length} タブ`;
+  }
 }
 
 async function init() {
-  const tabs = await getCurrentWindowTabs();
-  tabCountEl.textContent = `${tabs.length} タブ`;
+  await updateTabCount();
   renderRules();
 }
 
+allWindowsEl.addEventListener("change", updateTabCount);
+
 document.getElementById("btnDedup").addEventListener("click", async () => {
-  const tabs = await getCurrentWindowTabs();
+  const tabs = await getTargetTabs();
   try {
     const { removed } = await removeDuplicateTabs(tabs);
     if (removed === 0) {
@@ -63,20 +84,26 @@ document.getElementById("btnDedup").addEventListener("click", async () => {
     } else {
       showStatus(`${removed} 件の重複タブを削除しました`, "success");
     }
-    const updated = await getCurrentWindowTabs();
-    tabCountEl.textContent = `${updated.length} タブ`;
+    await updateTabCount();
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");
   }
 });
 
 document.getElementById("btnSort").addEventListener("click", async () => {
-  const tabs = await getCurrentWindowTabs();
-  const windowId = tabs[0]?.windowId;
-  if (!windowId) return;
+  const tabs = await getTargetTabs();
+  const windowsMap = groupTabsByWindow(tabs);
   try {
-    const { groupCount } = await sortAndGroupTabs(tabs, windowId);
-    showStatus(`${groupCount} グループに整理しました`, "success");
+    let totalGroups = 0;
+    for (const [windowId, windowTabs] of windowsMap) {
+      const { groupCount } = await sortAndGroupTabs(windowTabs, windowId);
+      totalGroups += groupCount;
+    }
+    if (windowsMap.size > 1) {
+      showStatus(`${windowsMap.size} ウィンドウを ${totalGroups} グループに整理しました`, "success");
+    } else {
+      showStatus(`${totalGroups} グループに整理しました`, "success");
+    }
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");
   }
