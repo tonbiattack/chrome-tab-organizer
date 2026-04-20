@@ -54,7 +54,7 @@ async function removeDuplicateTabs(tabs) {
   return { removed: toClose.length, kept: seen.size };
 }
 
-async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES) {
+async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { collapsed = false } = {}) {
   const filteredTabs = tabs.filter(
     (t) => t.url && !t.url.startsWith("chrome://") && !t.url.startsWith("chrome-extension://")
   );
@@ -106,7 +106,7 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES) {
     if (tabIds.length === 0) continue;
 
     const groupId = await chrome.tabs.group({ tabIds, createProperties: { windowId } });
-    await chrome.tabGroups.update(groupId, { title: rule.name, color: rule.color, collapsed: false });
+    await chrome.tabGroups.update(groupId, { title: rule.name, color: rule.color, collapsed });
     groupCount++;
   }
 
