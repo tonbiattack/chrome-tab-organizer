@@ -56,8 +56,8 @@ function getDefaultSettings() {
 
 function getActiveRules() {
   return [
-    ...GROUP_RULES.filter((rule) => enabledRuleNames.has(rule.name)),
     ...customRules.filter((rule) => rule.enabled).map(compileCustomRule),
+    ...GROUP_RULES.filter((rule) => enabledRuleNames.has(rule.name)),
   ];
 }
 
