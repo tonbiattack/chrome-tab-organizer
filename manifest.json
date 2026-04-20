@@ -5,7 +5,8 @@
   "description": "重複タブを削除し、ドメインごとにタブを整理するChrome拡張",
   "permissions": [
     "tabs",
-    "tabGroups"
+    "tabGroups",
+    "storage"
   ],
   "action": {
     "default_popup": "popup.html",

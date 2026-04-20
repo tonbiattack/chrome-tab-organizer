@@ -22,8 +22,8 @@ function normalizeUrl(url) {
   }
 }
 
-function matchGroup(url) {
-  for (const rule of GROUP_RULES) {
+function matchGroup(url, groupRules = GROUP_RULES) {
+  for (const rule of groupRules) {
     if (rule.patterns.some((p) => p.test(url))) {
       return rule;
     }
@@ -54,7 +54,7 @@ async function removeDuplicateTabs(tabs) {
   return { removed: toClose.length, kept: seen.size };
 }
 
-async function sortAndGroupTabs(tabs, windowId) {
+async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES) {
   const filteredTabs = tabs.filter(
     (t) => t.url && !t.url.startsWith("chrome://") && !t.url.startsWith("chrome-extension://")
   );
@@ -63,7 +63,7 @@ async function sortAndGroupTabs(tabs, windowId) {
   const others = [];
 
   for (const tab of filteredTabs) {
-    const rule = matchGroup(tab.url);
+    const rule = matchGroup(tab.url, groupRules);
     if (rule) {
       if (!groups.has(rule.name)) {
         groups.set(rule.name, { rule, tabs: [] });

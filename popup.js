@@ -4,6 +4,10 @@ const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
 const ruleListEl = document.getElementById("ruleList");
 const allWindowsEl = document.getElementById("allWindows");
+const STORAGE_KEYS = {
+  allWindows: "allWindows",
+  enabledRules: "enabledRules",
+};
 
 const RULE_COLORS = {
   blue: "#3b82f6",
@@ -18,6 +22,8 @@ const RULE_COLORS = {
   cyan: "#06b6d4",
 };
 
+let enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
+
 function showStatus(message, type = "success") {
   statusEl.textContent = message;
   statusEl.className = `status ${type}`;
@@ -26,20 +32,111 @@ function showStatus(message, type = "success") {
   }, 3000);
 }
 
+function getDefaultSettings() {
+  return {
+    [STORAGE_KEYS.allWindows]: false,
+    [STORAGE_KEYS.enabledRules]: GROUP_RULES.map((rule) => rule.name),
+  };
+}
+
+function getActiveRules() {
+  return GROUP_RULES.filter((rule) => enabledRuleNames.has(rule.name));
+}
+
+function getStorageArea() {
+  return chrome?.storage?.local ?? null;
+}
+
+async function loadSettings() {
+  const storage = getStorageArea();
+  if (!storage) {
+    allWindowsEl.checked = false;
+    enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
+    showStatus("設定保存が使えません。拡張を再読み込みしてください", "error");
+    return;
+  }
+
+  const settings = await storage.get(getDefaultSettings());
+  allWindowsEl.checked = Boolean(settings[STORAGE_KEYS.allWindows]);
+
+  const validRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
+  enabledRuleNames = new Set(
+    (settings[STORAGE_KEYS.enabledRules] ?? []).filter((name) => validRuleNames.has(name))
+  );
+
+  if (enabledRuleNames.size === 0) {
+    enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
+  }
+}
+
+async function saveAllWindowsSetting() {
+  const storage = getStorageArea();
+  if (!storage) {
+    return;
+  }
+
+  await storage.set({ [STORAGE_KEYS.allWindows]: allWindowsEl.checked });
+}
+
+async function saveEnabledRules() {
+  const storage = getStorageArea();
+  if (!storage) {
+    return;
+  }
+
+  await storage.set({
+    [STORAGE_KEYS.enabledRules]: GROUP_RULES
+      .map((rule) => rule.name)
+      .filter((name) => enabledRuleNames.has(name)),
+  });
+}
+
 function renderRules() {
   ruleListEl.innerHTML = "";
   for (const rule of GROUP_RULES) {
     const item = document.createElement("div");
     item.className = "rule-item";
 
+    const label = document.createElement("label");
+    label.className = "rule-label";
+
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.checked = enabledRuleNames.has(rule.name);
+    checkbox.addEventListener("change", async () => {
+      if (checkbox.checked) {
+        enabledRuleNames.add(rule.name);
+      } else if (enabledRuleNames.size === 1) {
+        checkbox.checked = true;
+        showStatus("少なくとも1つのルールを有効にしてください", "error");
+        return;
+      } else {
+        enabledRuleNames.delete(rule.name);
+      }
+
+      await saveEnabledRules();
+    });
+
     const dot = document.createElement("span");
     dot.className = "rule-dot";
     dot.style.background = RULE_COLORS[rule.color] ?? "#9ca3af";
 
-    const label = document.createElement("span");
-    label.textContent = `${rule.name} — ${rule.patterns.map((p) => p.source).join(", ")}`;
+    const text = document.createElement("span");
+    text.className = "rule-text";
 
-    item.appendChild(dot);
+    const name = document.createElement("span");
+    name.className = "rule-name";
+    name.textContent = rule.name;
+
+    const patterns = document.createElement("span");
+    patterns.className = "rule-patterns";
+    patterns.textContent = rule.patterns.map((pattern) => pattern.source).join(", ");
+
+    text.appendChild(name);
+    text.appendChild(patterns);
+    label.appendChild(checkbox);
+    label.appendChild(dot);
+    label.appendChild(text);
     item.appendChild(label);
     ruleListEl.appendChild(item);
   }
@@ -69,11 +166,15 @@ async function updateTabCount() {
 }
 
 async function init() {
+  await loadSettings();
   await updateTabCount();
   renderRules();
 }
 
-allWindowsEl.addEventListener("change", updateTabCount);
+allWindowsEl.addEventListener("change", async () => {
+  await saveAllWindowsSetting();
+  await updateTabCount();
+});
 
 document.getElementById("btnDedup").addEventListener("click", async () => {
   const tabs = await getTargetTabs();
@@ -91,12 +192,18 @@ document.getElementById("btnDedup").addEventListener("click", async () => {
 });
 
 document.getElementById("btnSort").addEventListener("click", async () => {
+  const activeRules = getActiveRules();
+  if (activeRules.length === 0) {
+    showStatus("有効なグループルールがありません", "error");
+    return;
+  }
+
   const tabs = await getTargetTabs();
   const windowsMap = groupTabsByWindow(tabs);
   try {
     let totalGroups = 0;
     for (const [windowId, windowTabs] of windowsMap) {
-      const { groupCount } = await sortAndGroupTabs(windowTabs, windowId);
+      const { groupCount } = await sortAndGroupTabs(windowTabs, windowId, activeRules);
       totalGroups += groupCount;
     }
     if (windowsMap.size > 1) {
