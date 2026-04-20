@@ -1,4 +1,4 @@
-const { normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, GROUP_RULES } = require("../src/tab-organizer");
+const { normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs, GROUP_RULES } = require("../src/tab-organizer");
 
 // --- normalizeUrl ---
 
@@ -251,6 +251,50 @@ describe("sortAndGroupTabs", () => {
     for (const rule of GROUP_RULES) {
       expect(allowedColors.has(rule.color)).toBe(true);
     }
+  });
+});
+
+// --- ungroupAllTabs ---
+
+describe("ungroupAllTabs", () => {
+  beforeEach(() => {
+    global.chrome = {
+      tabs: {
+        query: jest.fn(async () => [
+          { id: 1, groupId: 10 },
+          { id: 2, groupId: 10 },
+          { id: 3, groupId: 20 },
+          { id: 4, groupId: -1 },
+        ]),
+        ungroup: jest.fn(async () => {}),
+      },
+    };
+  });
+
+  test("グループに属するタブをすべて解除する", async () => {
+    const { ungrouped } = await ungroupAllTabs(false);
+    expect(ungrouped).toBe(2);
+    expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(2);
+  });
+
+  test("グループがなければ解除しない", async () => {
+    global.chrome.tabs.query = jest.fn(async () => [
+      { id: 1, groupId: -1 },
+      { id: 2, groupId: -1 },
+    ]);
+    const { ungrouped } = await ungroupAllTabs(false);
+    expect(ungrouped).toBe(0);
+    expect(global.chrome.tabs.ungroup).not.toHaveBeenCalled();
+  });
+
+  test("allWindows=true のとき全ウィンドウを対象にクエリする", async () => {
+    await ungroupAllTabs(true);
+    expect(global.chrome.tabs.query).toHaveBeenCalledWith({});
+  });
+
+  test("allWindows=false のとき現在のウィンドウのみクエリする", async () => {
+    await ungroupAllTabs(false);
+    expect(global.chrome.tabs.query).toHaveBeenCalledWith({ currentWindow: true });
   });
 });
 
