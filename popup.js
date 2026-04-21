@@ -23,6 +23,7 @@ const tabCountEl = document.getElementById("tabCount");
 const btnDedupEl = document.getElementById("btnDedup");
 const btnSortEl = document.getElementById("btnSort");
 const btnUngroupAllEl = document.getElementById("btnUngroupAll");
+const btnUngroupDefaultOnlyEl = document.getElementById("btnUngroupDefaultOnly");
 const shortcutRemoveDuplicatesEl = document.getElementById("shortcutRemoveDuplicates");
 const shortcutGroupByDomainEl = document.getElementById("shortcutGroupByDomain");
 const shortcutUngroupAllEl = document.getElementById("shortcutUngroupAll");
@@ -87,6 +88,11 @@ function getActiveRules() {
 
 function getManagedRules() {
   return getManagedRulesFromState(GROUP_RULES, customRules);
+}
+
+function getDefaultRulesExcludingCustomNames() {
+  const customRuleNames = new Set(customRules.map((rule) => rule.name));
+  return GROUP_RULES.filter((rule) => !customRuleNames.has(rule.name));
 }
 
 function getStorageArea() {
@@ -455,6 +461,20 @@ btnUngroupAllEl.addEventListener("click", async () => {
       showStatus("解除するグループはありませんでした", "success");
     } else {
       showStatus(`${ungrouped} 件のグループを解除しました`, "success");
+    }
+  } catch (e) {
+    showStatus(`エラー: ${e.message}`, "error");
+  }
+});
+
+btnUngroupDefaultOnlyEl.addEventListener("click", async () => {
+  try {
+    const defaultRules = getDefaultRulesExcludingCustomNames();
+    const { ungrouped } = await ungroupAllTabs(allWindowsEl.checked, defaultRules);
+    if (ungrouped === 0) {
+      showStatus("解除する標準ルールのグループはありませんでした", "success");
+    } else {
+      showStatus(`${ungrouped} 件の標準ルールグループを解除しました`, "success");
     }
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");
