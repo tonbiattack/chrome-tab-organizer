@@ -104,6 +104,18 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { coll
     }
   }
 
+  // この拡張が管理するグループ（ルール名と一致するタイトル）だけを先に解除する
+  // ※ タブ移動前に解除しないと、移動時にChromeが自動的にグループを解除し
+  //   groupIdが古いデータのままになって同名グループが増殖するバグが起きる
+  for (const group of existingGroups) {
+    if (ruleNames.has(group.title)) {
+      const groupTabs = filteredTabs.filter((t) => t.groupId === group.id).map((t) => t.id);
+      if (groupTabs.length > 0) {
+        await chrome.tabs.ungroup(groupTabs);
+      }
+    }
+  }
+
   // タブを順番に並び替える（グループ順 → Others）
   let index = 0;
 
@@ -117,16 +129,6 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { coll
   for (const tab of others) {
     await chrome.tabs.move(tab.id, { index });
     index++;
-  }
-
-  // この拡張が管理するグループ（ルール名と一致するタイトル）だけを解除する
-  for (const group of existingGroups) {
-    if (ruleNames.has(group.title)) {
-      const groupTabs = filteredTabs.filter((t) => t.groupId === group.id).map((t) => t.id);
-      if (groupTabs.length > 0) {
-        await chrome.tabs.ungroup(groupTabs);
-      }
-    }
   }
 
   // 再取得して並び替え後の最新インデックスでグループ化
