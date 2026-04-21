@@ -16,7 +16,18 @@
     }
   },
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "commands": {
+    "dedup-tabs": {
+      "suggested_key": { "default": "Alt+Shift+D" },
+      "description": "重複タブを削除"
+    },
+    "sort-tabs": {
+      "suggested_key": { "default": "Alt+Shift+G" },
+      "description": "ドメインごとに整理"
+    }
   },
   "icons": {
     "16": "icons/icon16.png",
