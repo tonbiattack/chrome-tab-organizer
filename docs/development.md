@@ -36,6 +36,7 @@
 - カスタムルールの import / export
 - Jira タブ URL から課題キー抽出
 - Google ドキュメント URL から Doc ID 抽出
+- Jira 課題キー / Google Doc ID / URL パターンを複合条件として 1 ルールにまとめる
 - 整理後にグループを折りたたむオプション（`collapseGroups` 設定）
 - 拡張が管理するグループだけを解除する（`ungroupAllTabs`）
 

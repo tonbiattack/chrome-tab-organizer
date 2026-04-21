@@ -16,19 +16,13 @@
 
 popup からカスタムルールを追加できるようにした。
 
-対応している種別:
-
-- `Jira課題キー`
-- `Google Doc ID`
-- `Jira課題キー + Google Doc ID`
-- `URLパターン`
+`Jira課題キー` `Google Doc ID` `URLパターン` を 1 つのルールに任意に組み合わせられる。
 
 カスタムルールで設定できる内容:
 
 - グループ名
 - グループ色
-- ルール種別
-- Jira 課題キー、Google Doc ID、または URL パターン
+- Jira 課題キー、Google Doc ID、URL パターン
 - 有効 / 無効
 
 また、現在開いている Jira タブ URL から課題キーを拾って入力欄へ流し込む補助ボタンと、Google ドキュメント URL から Doc ID を拾う補助ボタンを追加した。

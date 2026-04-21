@@ -9,68 +9,42 @@
 
 ## popup から追加できるルール
 
-### 1. Jira課題キー
+カスタムルールは 1 つのフォームで定義します。`Jira課題キー` `Google Doc ID` `URLパターン` の 3 つを任意に組み合わせられ、1 件以上入っていれば保存できます。
 
-次の情報を入力します。
+入力できる内容:
 
 - `グループ名`: タブグループ名
 - `グループ色`: Chrome タブグループ色
 - `Jira課題キー`: `PROJ-101` のようなキーの一覧
+- `Google Doc ID`: Google ドキュメント、スプレッドシート、スライド、フォーム、図形描画の ID 一覧
+- `URLパターン`: 正規表現の一覧
 
-このルールは、次のような Jira URL にマッチします。
+Jira 課題キーは次のような URL にマッチします。
 
 - `https://company.atlassian.net/browse/PROJ-101`
 - `https://company.atlassian.net/jira/software/...?...&selectedIssue=PROJ-101`
 
-使い方の例:
-
-1. 親課題やエピックに紐づく Jira タブを開く
-2. popup の `現在のJiraタブから取得` を押す
-3. `グループ名` に `親課題A` や `エピックB` を入れる
-4. `カスタムルールを追加` を押す
-
-### 2. Google Doc ID
-
-次の情報を入力します。
-
-- `グループ名`: タブグループ名
-- `グループ色`: Chrome タブグループ色
-- `Google Doc ID`: Google ドキュメント、スプレッドシート、スライド、フォーム、図形描画の ID 一覧
-
-このルールは、次のような URL にマッチします。
+Google Doc ID は次のような URL にマッチします。
 
 - `https://docs.google.com/document/d/<doc-id>/edit`
 - `https://docs.google.com/spreadsheets/d/<doc-id>/edit`
 - `https://docs.google.com/presentation/d/<doc-id>/edit`
 
-使い方の例:
-
-1. 関連する Google ドキュメント系タブを開く
-2. popup の `現在のGoogleドキュメントタブから取得` を押す
-3. `グループ名` に `設計資料` や `共有資料` を入れる
-4. `カスタムルールを追加` を押す
-
-### 3. Jira課題キー + Google Doc ID
-
-Jira と Google ドキュメントを同じグループにまとめたい場合に使います。
-
-入力できる内容:
-
-- `Jira課題キー`
-- `Google Doc ID`
-- `URLパターン`
-
-3 種類のうち 1 つ以上が入っていればルールとして保存できます。
-
-### 4. URLパターン
-
-正規表現をカンマ区切りまたは改行区切りで指定します。
+URL パターンは正規表現をカンマ区切りまたは改行区切りで指定します。
 
 例:
 
 - `figma\.com`
 - `miro\.com`
 - `docs\.company\.example`
+
+使い方の例:
+
+1. 親課題や関連ドキュメントのタブを開く
+2. popup の `現在のJiraタブから取得` や `現在のGoogleドキュメントタブから取得` を必要に応じて使う
+3. `グループ名` に `親課題A` や `Sprint 42` を入れる
+4. 必要なら `URLパターン` に Figma や Miro など追加でまとめたい条件を書く
+5. `カスタムルールを追加` を押す
 
 ## ルールの構造
 

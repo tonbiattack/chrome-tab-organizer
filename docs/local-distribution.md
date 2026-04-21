@@ -43,8 +43,7 @@
 
 - グループ名
 - 色
-- ルール種別
-- Jira 課題キー、Google Doc ID、または URL パターン
+- Jira 課題キー、Google Doc ID、URL パターン
 - 有効 / 無効
 
 ## 利用者向けに最低限伝えるとよい内容
