@@ -24,8 +24,10 @@ const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
 const btnDedupEl = document.getElementById("btnDedup");
 const btnSortEl = document.getElementById("btnSort");
+const btnUngroupAllEl = document.getElementById("btnUngroupAll");
 const shortcutRemoveDuplicatesEl = document.getElementById("shortcutRemoveDuplicates");
 const shortcutGroupByDomainEl = document.getElementById("shortcutGroupByDomain");
+const shortcutUngroupAllEl = document.getElementById("shortcutUngroupAll");
 const ruleListEl = document.getElementById("ruleList");
 const allWindowsEl = document.getElementById("allWindows");
 const collapseGroupsEl = document.getElementById("collapseGroups");
@@ -429,6 +431,7 @@ async function renderCommandShortcuts() {
   const shortcutElements = {
     "remove-duplicates": shortcutRemoveDuplicatesEl,
     "group-by-domain": shortcutGroupByDomainEl,
+    "ungroup-all-managed": shortcutUngroupAllEl,
   };
 
   for (const [commandName, element] of Object.entries(shortcutElements)) {
@@ -459,7 +462,7 @@ allWindowsEl.addEventListener("change", async () => {
 
 collapseGroupsEl.addEventListener("change", saveCollapseGroupsSetting);
 
-document.getElementById("btnUngroupAll").addEventListener("click", async () => {
+btnUngroupAllEl.addEventListener("click", async () => {
   try {
     const { ungrouped } = await ungroupAllTabs(allWindowsEl.checked, getManagedRules());
     if (ungrouped === 0) {
