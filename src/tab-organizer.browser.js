@@ -43,8 +43,18 @@ function findBookmarksBarNode(nodes) {
   return null;
 }
 
+function collectBookmarkDescendants(nodes, results = []) {
+  for (const node of nodes) {
+    results.push(node);
+    if (Array.isArray(node?.children) && node.children.length > 0) {
+      collectBookmarkDescendants(node.children, results);
+    }
+  }
+  return results;
+}
+
 async function removeManagedSavedGroups(ruleNames) {
-  if (!chrome.bookmarks?.getTree || !chrome.bookmarks?.removeTree) {
+  if (!chrome.bookmarks?.getTree) {
     return 0;
   }
 
@@ -54,17 +64,20 @@ async function removeManagedSavedGroups(ruleNames) {
     return 0;
   }
 
-  const targetFolders = bookmarksBarNode.children.filter((node) => (
-    !node.url
-    && !node.unmodifiable
+  const targetNodes = collectBookmarkDescendants(bookmarksBarNode.children).filter((node) => (
+    !node.unmodifiable
     && ruleNames.has(node.title)
   ));
 
-  for (const folder of targetFolders) {
-    await chrome.bookmarks.removeTree(folder.id);
+  for (const node of targetNodes) {
+    if (Array.isArray(node.children) && node.children.length > 0 && chrome.bookmarks.removeTree) {
+      await chrome.bookmarks.removeTree(node.id);
+    } else if (chrome.bookmarks.remove) {
+      await chrome.bookmarks.remove(node.id);
+    }
   }
 
-  return targetFolders.length;
+  return targetNodes.length;
 }
 
 async function removeDuplicateTabs(tabs) {

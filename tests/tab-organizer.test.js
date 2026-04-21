@@ -299,12 +299,20 @@ describe("ungroupAllTabs", () => {
                 folderType: "bookmarks-bar",
                 children: [
                   { id: "100", title: "GitHub", children: [{ id: "101", url: "https://github.com/openai" }] },
+                  {
+                    id: "300",
+                    title: "親フォルダ",
+                    children: [
+                      { id: "301", title: "Amazon", url: "chrome://tab-group/amazon" },
+                    ],
+                  },
                   { id: "200", title: "手動保存", children: [{ id: "201", url: "https://example.com" }] },
                 ],
               },
             ],
           },
         ]),
+        remove: jest.fn(async () => {}),
         removeTree: jest.fn(async () => {}),
       },
     };
@@ -313,11 +321,13 @@ describe("ungroupAllTabs", () => {
   test("拡張が管理するグループだけを解除する", async () => {
     const { ungrouped, removedSavedGroups } = await ungroupAllTabs(false);
     expect(ungrouped).toBe(1);
-    expect(removedSavedGroups).toBe(1);
+    expect(removedSavedGroups).toBe(2);
     expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(1);
     expect(global.chrome.tabs.ungroup).toHaveBeenCalledWith([1, 2]);
     expect(global.chrome.bookmarks.removeTree).toHaveBeenCalledTimes(1);
     expect(global.chrome.bookmarks.removeTree).toHaveBeenCalledWith("100");
+    expect(global.chrome.bookmarks.remove).toHaveBeenCalledTimes(1);
+    expect(global.chrome.bookmarks.remove).toHaveBeenCalledWith("301");
   });
 
   test("管理対象グループがなければ解除しない", async () => {
@@ -343,6 +353,7 @@ describe("ungroupAllTabs", () => {
     expect(removedSavedGroups).toBe(0);
     expect(global.chrome.tabs.ungroup).not.toHaveBeenCalled();
     expect(global.chrome.bookmarks.removeTree).not.toHaveBeenCalled();
+    expect(global.chrome.bookmarks.remove).not.toHaveBeenCalled();
   });
 
   test("allWindows=true のとき全ウィンドウを対象にクエリする", async () => {
