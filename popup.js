@@ -32,6 +32,7 @@ const collapseGroupsEl = document.getElementById("collapseGroups");
 const customRuleListEl = document.getElementById("customRuleList");
 const customRuleFormEl = document.getElementById("customRuleForm");
 const customRuleNameEl = document.getElementById("customRuleName");
+const customRuleColorPaletteEl = document.getElementById("customRuleColorPalette");
 const customRuleColorEl = document.getElementById("customRuleColor");
 const customRulePatternsEl = document.getElementById("customRulePatterns");
 const customRuleKeysEl = document.getElementById("customRuleKeys");
@@ -55,6 +56,17 @@ const RULE_COLORS = {
   orange: "#f97316",
   pink: "#ec4899",
   cyan: "#06b6d4",
+};
+const COLOR_LABELS = {
+  blue: "Blue",
+  cyan: "Cyan",
+  green: "Green",
+  grey: "Grey",
+  orange: "Orange",
+  pink: "Pink",
+  purple: "Purple",
+  red: "Red",
+  yellow: "Yellow",
 };
 
 let enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
@@ -265,9 +277,51 @@ function renderCustomRules() {
   }
 }
 
+function setSelectedCustomRuleColor(color) {
+  const selectedColor = ALLOWED_COLORS.includes(color) ? color : "blue";
+  customRuleColorEl.value = selectedColor;
+
+  const colorButtons = customRuleColorPaletteEl.querySelectorAll(".color-chip");
+  for (const button of colorButtons) {
+    const isSelected = button.dataset.color === selectedColor;
+    button.classList.toggle("is-selected", isSelected);
+    button.setAttribute("aria-checked", String(isSelected));
+  }
+}
+
+function renderColorPalette() {
+  customRuleColorPaletteEl.innerHTML = "";
+
+  for (const color of ALLOWED_COLORS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "color-chip";
+    button.dataset.color = color;
+    button.setAttribute("role", "radio");
+    button.setAttribute("aria-label", `${COLOR_LABELS[color] ?? color} を選択`);
+
+    const swatch = document.createElement("span");
+    swatch.className = "color-chip-swatch";
+    swatch.style.background = RULE_COLORS[color] ?? "#9ca3af";
+
+    const label = document.createElement("span");
+    label.textContent = COLOR_LABELS[color] ?? color;
+
+    button.appendChild(swatch);
+    button.appendChild(label);
+    button.addEventListener("click", () => {
+      setSelectedCustomRuleColor(color);
+    });
+
+    customRuleColorPaletteEl.appendChild(button);
+  }
+
+  setSelectedCustomRuleColor(customRuleColorEl.value || "blue");
+}
+
 function resetCustomRuleForm() {
   customRuleFormEl.reset();
-  customRuleColorEl.value = "blue";
+  setSelectedCustomRuleColor("blue");
   editingRuleId = null;
   formTitleEl.textContent = "ルール追加";
   customRuleSubmitEl.textContent = "カスタムルールを追加";
@@ -277,7 +331,7 @@ function resetCustomRuleForm() {
 function populateFormWithRule(rule) {
   editingRuleId = rule.id;
   customRuleNameEl.value = rule.name;
-  customRuleColorEl.value = rule.color;
+  setSelectedCustomRuleColor(rule.color);
   customRuleKeysEl.value = (rule.issueKeys ?? []).join(", ");
   customRuleDocIdsEl.value = (rule.docIds ?? []).join(", ");
   customRulePatternsEl.value = (rule.patterns ?? []).join("\n");
@@ -381,6 +435,7 @@ async function init() {
   await loadSettings();
   await updateTabCount();
   await renderCommandShortcuts();
+  renderColorPalette();
   renderRules();
   renderCustomRules();
   resetCustomRuleForm();

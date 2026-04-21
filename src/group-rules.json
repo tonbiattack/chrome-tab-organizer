@@ -26,12 +26,12 @@
   },
   {
     "name": "Gemini",
-    "color": "cyan",
+    "color": "pink",
     "patterns": ["gemini\\.google\\.com"]
   },
   {
     "name": "Calendar",
-    "color": "blue",
+    "color": "orange",
     "patterns": ["calendar\\.google\\.com"]
   },
   {
