@@ -132,6 +132,7 @@ function sanitizeCustomRule(rule) {
   const rawType = rule.type;
   const type = rawType === "jira-keys" ? "jira-keys"
     : rawType === "google-doc-ids" ? "google-doc-ids"
+    : rawType === "combined" ? "combined"
     : "url-pattern";
   const color = ALLOWED_COLORS.includes(rule.color) ? rule.color : "blue";
   const enabled = rule.enabled !== false;
@@ -161,6 +162,31 @@ function sanitizeCustomRule(rule) {
     }
 
     return { id, name, type, color, enabled, docIds };
+  }
+
+  if (type === "combined") {
+    const issueKeys = parseListInput((rule.issueKeys ?? []).join(","))
+      .map((key) => key.toUpperCase())
+      .filter((key) => /^[A-Z][A-Z0-9_]*-\d+$/.test(key));
+
+    const docIds = parseListInput((rule.docIds ?? []).join(","))
+      .filter((docId) => /^[-_a-zA-Z0-9]{25,}$/.test(docId));
+
+    const patterns = parseListInput((rule.patterns ?? []).join("\n"));
+
+    for (const pattern of patterns) {
+      try {
+        new RegExp(pattern, "i");
+      } catch {
+        return null;
+      }
+    }
+
+    if (issueKeys.length === 0 && docIds.length === 0 && patterns.length === 0) {
+      return null;
+    }
+
+    return { id, name, type, color, enabled, issueKeys, docIds, patterns };
   }
 
   const patterns = parseListInput((rule.patterns ?? []).join("\n"));
@@ -202,6 +228,18 @@ function compileCustomRule(rule) {
     };
   }
 
+  if (rule.type === "combined") {
+    return {
+      name: rule.name,
+      color: rule.color,
+      patterns: [
+        ...rule.issueKeys.map((issueKey) => new RegExp(buildJiraPattern(issueKey), "i")),
+        ...rule.docIds.map((docId) => new RegExp(buildGoogleDocPattern(docId), "i")),
+        ...(rule.patterns ?? []).map((pattern) => new RegExp(pattern, "i")),
+      ],
+    };
+  }
+
   return {
     name: rule.name,
     color: rule.color,
@@ -216,6 +254,14 @@ function createPatternPreview(rule) {
 
   if (rule.type === "google-doc-ids") {
     return `Google Doc: ${rule.docIds.join(", ")}`;
+  }
+
+  if (rule.type === "combined") {
+    const parts = [];
+    if (rule.issueKeys.length > 0) parts.push(`Jira課題: ${rule.issueKeys.join(", ")}`);
+    if (rule.docIds.length > 0) parts.push(`Google Doc: ${rule.docIds.join(", ")}`);
+    if ((rule.patterns ?? []).length > 0) parts.push(rule.patterns.join(", "));
+    return parts.join(" / ");
   }
 
   return rule.patterns.join(", ");
