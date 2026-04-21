@@ -96,6 +96,32 @@ function extractJiraIssueKeys(url) {
   return [...matches];
 }
 
+function buildGoogleDocPattern(docId) {
+  const escapedId = escapeRegExp(docId);
+  return `docs\\.google\\.com/(?:document|spreadsheets|presentation|forms|drawings)/d/${escapedId}(?:[/?#]|$)`;
+}
+
+function extractGoogleDocIds(url) {
+  if (!url) {
+    return [];
+  }
+
+  const matches = new Set();
+  for (const match of url.matchAll(/docs\.google\.com\/(?:document|spreadsheets|presentation|forms|drawings)\/d\/([-_a-zA-Z0-9]{25,})/g)) {
+    matches.add(match[1]);
+  }
+
+  return [...matches];
+}
+
+function mergeDocIds(currentValue, docIds) {
+  const merged = new Set([
+    ...parseListInput(currentValue),
+    ...docIds,
+  ]);
+  return [...merged].join(", ");
+}
+
 function sanitizeCustomRule(rule) {
   if (!rule || typeof rule !== "object") {
     return null;
@@ -103,7 +129,10 @@ function sanitizeCustomRule(rule) {
 
   const name = String(rule.name ?? "").trim();
   const id = String(rule.id ?? "").trim();
-  const type = rule.type === "jira-keys" ? "jira-keys" : "url-pattern";
+  const rawType = rule.type;
+  const type = rawType === "jira-keys" ? "jira-keys"
+    : rawType === "google-doc-ids" ? "google-doc-ids"
+    : "url-pattern";
   const color = ALLOWED_COLORS.includes(rule.color) ? rule.color : "blue";
   const enabled = rule.enabled !== false;
 
@@ -121,6 +150,17 @@ function sanitizeCustomRule(rule) {
     }
 
     return { id, name, type, color, enabled, issueKeys };
+  }
+
+  if (type === "google-doc-ids") {
+    const docIds = parseListInput((rule.docIds ?? []).join(","))
+      .filter((docId) => /^[-_a-zA-Z0-9]{25,}$/.test(docId));
+
+    if (docIds.length === 0) {
+      return null;
+    }
+
+    return { id, name, type, color, enabled, docIds };
   }
 
   const patterns = parseListInput((rule.patterns ?? []).join("\n"));
@@ -154,6 +194,14 @@ function compileCustomRule(rule) {
     };
   }
 
+  if (rule.type === "google-doc-ids") {
+    return {
+      name: rule.name,
+      color: rule.color,
+      patterns: rule.docIds.map((docId) => new RegExp(buildGoogleDocPattern(docId), "i")),
+    };
+  }
+
   return {
     name: rule.name,
     color: rule.color,
@@ -164,6 +212,10 @@ function compileCustomRule(rule) {
 function createPatternPreview(rule) {
   if (rule.type === "jira-keys") {
     return `Jira課題: ${rule.issueKeys.join(", ")}`;
+  }
+
+  if (rule.type === "google-doc-ids") {
+    return `Google Doc: ${rule.docIds.join(", ")}`;
   }
 
   return rule.patterns.join(", ");
@@ -190,9 +242,12 @@ export {
   parseListInput,
   buildJiraPattern,
   extractJiraIssueKeys,
+  mergeIssueKeys,
+  buildGoogleDocPattern,
+  extractGoogleDocIds,
+  mergeDocIds,
   sanitizeCustomRule,
   sanitizeCustomRules,
   compileCustomRule,
   createPatternPreview,
-  mergeIssueKeys,
 };

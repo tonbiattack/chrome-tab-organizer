@@ -115,6 +115,116 @@ describe("popup logic", () => {
     });
   });
 
+  describe("extractGoogleDocIds", () => {
+    test("ドキュメントURLからIDを抽出する", () => {
+      const ids = popupLogic.extractGoogleDocIds(
+        "https://docs.google.com/document/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+      );
+      expect(ids).toEqual(["1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"]);
+    });
+
+    test("スプレッドシート・スライド・フォームURLからもIDを抽出する", () => {
+      expect(popupLogic.extractGoogleDocIds(
+        "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+      )).toEqual(["1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"]);
+
+      expect(popupLogic.extractGoogleDocIds(
+        "https://docs.google.com/presentation/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+      )).toEqual(["1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"]);
+    });
+
+    test("Google DocsのURLでなければ空配列を返す", () => {
+      expect(popupLogic.extractGoogleDocIds("https://github.com")).toEqual([]);
+      expect(popupLogic.extractGoogleDocIds("")).toEqual([]);
+    });
+
+    test("重複IDは1回だけ返す", () => {
+      const ids = popupLogic.extractGoogleDocIds(
+        "https://docs.google.com/document/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit#comment?d=1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"
+      );
+      expect(ids).toEqual(["1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"]);
+    });
+  });
+
+  describe("buildGoogleDocPattern", () => {
+    test("生成したパターンがドキュメントURLにマッチする", () => {
+      const docId = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms";
+      const pattern = new RegExp(popupLogic.buildGoogleDocPattern(docId), "i");
+
+      expect(pattern.test("https://docs.google.com/document/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit")).toBe(true);
+      expect(pattern.test("https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit")).toBe(true);
+      expect(pattern.test("https://docs.google.com/document/d/OTHERDOCID123456789012345678901234567/edit")).toBe(false);
+    });
+  });
+
+  describe("mergeDocIds", () => {
+    test("既存入力と新規IDをマージして重複を除く", () => {
+      const id1 = "1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms";
+      const id2 = "2CyiNWt1YSB6nGNLlwCeCakhnVVrqumuct85PhWF3vnt";
+      const merged = popupLogic.mergeDocIds(id1, [id1, id2]);
+      expect(merged).toBe(`${id1}, ${id2}`);
+    });
+  });
+
+  describe("sanitizeCustomRule (google-doc-ids)", () => {
+    test("有効なgoogle-doc-idsルールをそのまま返す", () => {
+      const rule = {
+        id: "rule-1",
+        name: "企画ドキュメント",
+        type: "google-doc-ids",
+        color: "green",
+        enabled: true,
+        docIds: ["1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"],
+      };
+      expect(popupLogic.sanitizeCustomRule(rule)).toEqual(rule);
+    });
+
+    test("短すぎるIDを除外する", () => {
+      const rule = {
+        id: "rule-1",
+        name: "企画ドキュメント",
+        type: "google-doc-ids",
+        color: "green",
+        enabled: true,
+        docIds: ["short"],
+      };
+      expect(popupLogic.sanitizeCustomRule(rule)).toBeNull();
+    });
+
+    test("不正な文字を含むIDを除外する", () => {
+      const rule = {
+        id: "rule-1",
+        name: "企画ドキュメント",
+        type: "google-doc-ids",
+        color: "green",
+        enabled: true,
+        docIds: ["1BxiMVs0XRA5nFMd KvBdBZjgmUUqptlbs74OgVE2upms"],
+      };
+      expect(popupLogic.sanitizeCustomRule(rule)).toBeNull();
+    });
+  });
+
+  describe("compileCustomRule (google-doc-ids)", () => {
+    test("google-doc-idsルールをコンパイルしてURLにマッチする", () => {
+      const rule = {
+        id: "rule-1",
+        name: "企画ドキュメント",
+        type: "google-doc-ids",
+        color: "green",
+        enabled: true,
+        docIds: ["1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"],
+      };
+      const compiled = popupLogic.compileCustomRule(rule);
+
+      expect(compiled.name).toBe("企画ドキュメント");
+      expect(compiled.color).toBe("green");
+      expect(compiled.patterns).toHaveLength(1);
+      expect(compiled.patterns[0].test(
+        "https://docs.google.com/document/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms/edit"
+      )).toBe(true);
+    });
+  });
+
   describe("ungroupAllTabs", () => {
     beforeEach(() => {
       global.chrome = {
