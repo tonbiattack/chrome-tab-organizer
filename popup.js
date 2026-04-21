@@ -456,11 +456,12 @@ collapseGroupsEl.addEventListener("change", saveCollapseGroupsSetting);
 
 btnUngroupAllEl.addEventListener("click", async () => {
   try {
-    const { ungrouped } = await ungroupAllTabs(allWindowsEl.checked, getManagedRules());
-    if (ungrouped === 0) {
+    const { ungrouped, removedBookmarkGroups } = await ungroupAllTabs(allWindowsEl.checked, getManagedRules());
+    const total = ungrouped + removedBookmarkGroups;
+    if (total === 0) {
       showStatus("解除するグループはありませんでした", "success");
     } else {
-      showStatus(`${ungrouped} 件のグループを解除しました`, "success");
+      showStatus(`${total} 件のグループを解除しました`, "success");
     }
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");
@@ -470,11 +471,12 @@ btnUngroupAllEl.addEventListener("click", async () => {
 btnUngroupDefaultOnlyEl.addEventListener("click", async () => {
   try {
     const defaultRules = getDefaultRulesExcludingCustomNames();
-    const { ungrouped } = await ungroupAllTabs(allWindowsEl.checked, defaultRules);
-    if (ungrouped === 0) {
+    const { ungrouped, removedBookmarkGroups } = await ungroupAllTabs(allWindowsEl.checked, defaultRules);
+    const total = ungrouped + removedBookmarkGroups;
+    if (total === 0) {
       showStatus("解除する標準ルールのグループはありませんでした", "success");
     } else {
-      showStatus(`${ungrouped} 件の標準ルールグループを解除しました`, "success");
+      showStatus(`${total} 件の標準ルールグループを解除しました`, "success");
     }
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");

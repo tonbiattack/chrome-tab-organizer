@@ -289,23 +289,59 @@ describe("ungroupAllTabs", () => {
           { id: 20, title: "作業中", windowId: 1 },
         ]),
       },
+      bookmarks: {
+        getTree: jest.fn(async () => [
+          {
+            id: "0",
+            children: [
+              {
+                id: "1",
+                children: [
+                  { id: "100", title: "GitHub", children: [] },
+                  { id: "101", title: "作業中", children: [] },
+                  { id: "102", title: "Google", url: "https://www.google.com" },
+                ],
+              },
+            ],
+          },
+        ]),
+        removeTree: jest.fn(async () => {}),
+      },
     };
   });
 
   test("拡張が管理するグループだけを解除する", async () => {
-    const { ungrouped } = await ungroupAllTabs(false);
+    const { ungrouped, removedBookmarkGroups } = await ungroupAllTabs(false);
     expect(ungrouped).toBe(1);
+    expect(removedBookmarkGroups).toBe(1);
     expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(1);
     expect(global.chrome.tabs.ungroup).toHaveBeenCalledWith([1, 2]);
+    expect(global.chrome.bookmarks.removeTree).toHaveBeenCalledTimes(1);
+    expect(global.chrome.bookmarks.removeTree).toHaveBeenCalledWith("100");
   });
 
   test("管理対象グループがなければ解除しない", async () => {
     global.chrome.tabGroups.query = jest.fn(async () => [
       { id: 20, title: "作業中", windowId: 1 },
     ]);
-    const { ungrouped } = await ungroupAllTabs(false);
+    global.chrome.bookmarks.getTree = jest.fn(async () => [
+      {
+        id: "0",
+        children: [
+          {
+            id: "1",
+            children: [
+              { id: "101", title: "作業中", children: [] },
+            ],
+          },
+        ],
+      },
+    ]);
+    const { ungrouped, removedBookmarkGroups } = await ungroupAllTabs(false);
     expect(ungrouped).toBe(0);
+    expect(removedBookmarkGroups).toBe(0);
     expect(global.chrome.tabs.ungroup).not.toHaveBeenCalled();
+    expect(global.chrome.bookmarks.removeTree).not.toHaveBeenCalled();
   });
 
   test("allWindows=true のとき全ウィンドウを対象にクエリする", async () => {

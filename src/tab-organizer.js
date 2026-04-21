@@ -38,6 +38,39 @@ function getRuleNames(groupRules = GROUP_RULES) {
   return new Set(groupRules.map((rule) => rule.name));
 }
 
+function getBookmarksBarNode(tree) {
+  if (!Array.isArray(tree) || tree.length === 0) {
+    return null;
+  }
+
+  const root = tree[0];
+  const candidates = root.children ?? [];
+  return candidates.find((node) => node.id === "1") ?? candidates[0] ?? null;
+}
+
+async function removeManagedBookmarkBarGroups(ruleNames) {
+  if (!chrome?.bookmarks?.getTree || !chrome?.bookmarks?.removeTree) {
+    return 0;
+  }
+
+  const tree = await chrome.bookmarks.getTree();
+  const bookmarksBar = getBookmarksBarNode(tree);
+  if (!bookmarksBar?.children?.length) {
+    return 0;
+  }
+
+  const managedFolders = bookmarksBar.children.filter((node) => {
+    const isFolder = !node.url && Array.isArray(node.children);
+    return isFolder && ruleNames.has(node.title);
+  });
+
+  for (const folder of managedFolders) {
+    await chrome.bookmarks.removeTree(folder.id);
+  }
+
+  return managedFolders.length;
+}
+
 /**
  * 重複URLのタブを削除し、最初に見つかったタブのみ残す
  * @param {chrome.tabs.Tab[]} tabs
@@ -161,7 +194,9 @@ async function ungroupAllTabs(allWindows, groupRules = GROUP_RULES) {
       await chrome.tabs.ungroup(tabIds);
     }
   }
-  return { ungrouped: managedGroupIds.length };
+
+  const removedBookmarkGroups = await removeManagedBookmarkBarGroups(ruleNames);
+  return { ungrouped: managedGroupIds.length, removedBookmarkGroups };
 }
 
 if (typeof module !== "undefined") {
