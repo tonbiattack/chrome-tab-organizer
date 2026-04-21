@@ -1,0 +1,69 @@
+const groupRulesData = [
+  {
+    name: "Confluence",
+    color: "cyan",
+    patterns: ["confluence\\.", "atlassian\\.net\\/wiki"],
+  },
+  {
+    name: "Jira",
+    color: "blue",
+    patterns: ["jira\\.", "atlassian\\.net"],
+  },
+  {
+    name: "GitHub",
+    color: "purple",
+    patterns: ["github\\.com"],
+  },
+  {
+    name: "Slack",
+    color: "yellow",
+    patterns: ["app\\.slack\\.com"],
+  },
+  {
+    name: "Notion",
+    color: "grey",
+    patterns: ["notion\\.so"],
+  },
+  {
+    name: "Gemini",
+    color: "cyan",
+    patterns: ["gemini\\.google\\.com"],
+  },
+  {
+    name: "Calendar",
+    color: "blue",
+    patterns: ["calendar\\.google\\.com"],
+  },
+  {
+    name: "Google",
+    color: "green",
+    patterns: ["docs\\.google\\.com", "drive\\.google\\.com"],
+  },
+  {
+    name: "ChatGPT",
+    color: "cyan",
+    patterns: ["chatgpt\\.com", "chat\\.openai\\.com"],
+  },
+  {
+    name: "Qiita",
+    color: "green",
+    patterns: ["qiita\\.com"],
+  },
+  {
+    name: "Zenn",
+    color: "blue",
+    patterns: ["zenn\\.dev"],
+  },
+  {
+    name: "Amazon",
+    color: "orange",
+    patterns: ["amazon\\.co\\.jp", "amazon\\.com", "amzn\\.to"],
+  },
+  {
+    name: "YouTube",
+    color: "red",
+    patterns: ["youtube\\.com", "youtu\\.be"],
+  },
+];
+
+export default groupRulesData;

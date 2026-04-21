@@ -1,4 +1,4 @@
-import groupRulesData from "./group-rules.json" with { type: "json" };
+import groupRulesData from "./group-rules.mjs";
 
 const GROUP_RULES = groupRulesData.map((rule) => ({
   ...rule,
