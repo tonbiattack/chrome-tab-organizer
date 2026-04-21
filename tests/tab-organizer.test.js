@@ -289,23 +289,60 @@ describe("ungroupAllTabs", () => {
           { id: 20, title: "作業中", windowId: 1 },
         ]),
       },
+      bookmarks: {
+        getTree: jest.fn(async () => [
+          {
+            id: "0",
+            children: [
+              {
+                id: "1",
+                folderType: "bookmarks-bar",
+                children: [
+                  { id: "100", title: "GitHub", children: [{ id: "101", url: "https://github.com/openai" }] },
+                  { id: "200", title: "手動保存", children: [{ id: "201", url: "https://example.com" }] },
+                ],
+              },
+            ],
+          },
+        ]),
+        removeTree: jest.fn(async () => {}),
+      },
     };
   });
 
   test("拡張が管理するグループだけを解除する", async () => {
-    const { ungrouped } = await ungroupAllTabs(false);
+    const { ungrouped, removedSavedGroups } = await ungroupAllTabs(false);
     expect(ungrouped).toBe(1);
+    expect(removedSavedGroups).toBe(1);
     expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(1);
     expect(global.chrome.tabs.ungroup).toHaveBeenCalledWith([1, 2]);
+    expect(global.chrome.bookmarks.removeTree).toHaveBeenCalledTimes(1);
+    expect(global.chrome.bookmarks.removeTree).toHaveBeenCalledWith("100");
   });
 
   test("管理対象グループがなければ解除しない", async () => {
     global.chrome.tabGroups.query = jest.fn(async () => [
       { id: 20, title: "作業中", windowId: 1 },
     ]);
-    const { ungrouped } = await ungroupAllTabs(false);
+    global.chrome.bookmarks.getTree = jest.fn(async () => [
+      {
+        id: "0",
+        children: [
+          {
+            id: "1",
+            folderType: "bookmarks-bar",
+            children: [
+              { id: "200", title: "手動保存", children: [{ id: "201", url: "https://example.com" }] },
+            ],
+          },
+        ],
+      },
+    ]);
+    const { ungrouped, removedSavedGroups } = await ungroupAllTabs(false);
     expect(ungrouped).toBe(0);
+    expect(removedSavedGroups).toBe(0);
     expect(global.chrome.tabs.ungroup).not.toHaveBeenCalled();
+    expect(global.chrome.bookmarks.removeTree).not.toHaveBeenCalled();
   });
 
   test("allWindows=true のとき全ウィンドウを対象にクエリする", async () => {
@@ -318,6 +355,16 @@ describe("ungroupAllTabs", () => {
     await ungroupAllTabs(false);
     expect(global.chrome.tabs.query).toHaveBeenCalledWith({ currentWindow: true });
     expect(global.chrome.tabGroups.query).toHaveBeenCalledWith({ windowId: -2 });
+  });
+
+  test("bookmarks API が使えない環境でも開いているグループ解除は動く", async () => {
+    delete global.chrome.bookmarks;
+
+    const { ungrouped, removedSavedGroups } = await ungroupAllTabs(false);
+
+    expect(ungrouped).toBe(1);
+    expect(removedSavedGroups).toBe(0);
+    expect(global.chrome.tabs.ungroup).toHaveBeenCalledWith([1, 2]);
   });
 });
 

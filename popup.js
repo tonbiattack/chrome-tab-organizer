@@ -464,11 +464,16 @@ collapseGroupsEl.addEventListener("change", saveCollapseGroupsSetting);
 
 btnUngroupAllEl.addEventListener("click", async () => {
   try {
-    const { ungrouped } = await ungroupAllTabs(allWindowsEl.checked, getManagedRules());
-    if (ungrouped === 0) {
+    const { ungrouped, removedSavedGroups } = await ungroupAllTabs(allWindowsEl.checked, getManagedRules());
+    const totalRemoved = ungrouped + removedSavedGroups;
+
+    if (totalRemoved === 0) {
       showStatus("解除するグループはありませんでした", "success");
     } else {
-      showStatus(`${ungrouped} 件のグループを解除しました`, "success");
+      showStatus(
+        `開いているグループ ${ungrouped} 件、保存済みグループ ${removedSavedGroups} 件を解除しました`,
+        "success"
+      );
     }
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");

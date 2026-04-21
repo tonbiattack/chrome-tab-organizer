@@ -28,6 +28,45 @@ function getRuleNames(groupRules = GROUP_RULES) {
   return new Set(groupRules.map((rule) => rule.name));
 }
 
+function findBookmarksBarNode(nodes) {
+  for (const node of nodes) {
+    if (node?.folderType === "bookmarks-bar") {
+      return node;
+    }
+    if (Array.isArray(node?.children)) {
+      const childMatch = findBookmarksBarNode(node.children);
+      if (childMatch) {
+        return childMatch;
+      }
+    }
+  }
+  return null;
+}
+
+async function removeManagedSavedGroups(ruleNames) {
+  if (!chrome.bookmarks?.getTree || !chrome.bookmarks?.removeTree) {
+    return 0;
+  }
+
+  const tree = await chrome.bookmarks.getTree();
+  const bookmarksBarNode = findBookmarksBarNode(tree);
+  if (!bookmarksBarNode?.children) {
+    return 0;
+  }
+
+  const targetFolders = bookmarksBarNode.children.filter((node) => (
+    !node.url
+    && !node.unmodifiable
+    && ruleNames.has(node.title)
+  ));
+
+  for (const folder of targetFolders) {
+    await chrome.bookmarks.removeTree(folder.id);
+  }
+
+  return targetFolders.length;
+}
+
 async function removeDuplicateTabs(tabs) {
   const seen = new Map();
   const toClose = [];
@@ -135,7 +174,8 @@ async function ungroupAllTabs(allWindows, groupRules = GROUP_RULES) {
       await chrome.tabs.ungroup(tabIds);
     }
   }
-  return { ungrouped: managedGroupIds.length };
+  const removedSavedGroups = await removeManagedSavedGroups(ruleNames);
+  return { ungrouped: managedGroupIds.length, removedSavedGroups };
 }
 
 export { GROUP_RULES, normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs };
