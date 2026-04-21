@@ -37,6 +37,12 @@
         "default": "Alt+Shift+G"
       },
       "description": "ドメインごとにタブをグループ化"
+    },
+    "ungroup-all-managed": {
+      "suggested_key": {
+        "default": "Alt+Shift+U"
+      },
+      "description": "拡張が管理するタブグループを解除"
     }
   }
 }

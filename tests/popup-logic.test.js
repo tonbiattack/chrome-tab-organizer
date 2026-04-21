@@ -504,11 +504,13 @@ describe("popup logic", () => {
       const shortcuts = popupLogic.resolveCommandShortcuts([
         { name: "remove-duplicates", shortcut: "Ctrl+Shift+D" },
         { name: "group-by-domain", shortcut: "Ctrl+Shift+G" },
+        { name: "ungroup-all-managed", shortcut: "Ctrl+Shift+U" },
       ]);
 
       expect(shortcuts).toEqual({
         "remove-duplicates": "Ctrl+Shift+D",
         "group-by-domain": "Ctrl+Shift+G",
+        "ungroup-all-managed": "Ctrl+Shift+U",
       });
     });
 
@@ -520,6 +522,7 @@ describe("popup logic", () => {
       expect(shortcuts).toEqual({
         "remove-duplicates": "Alt+Shift+D",
         "group-by-domain": "Alt+Shift+G",
+        "ungroup-all-managed": "Alt+Shift+U",
       });
     });
   });

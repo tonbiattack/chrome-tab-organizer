@@ -10,6 +10,7 @@ const CUSTOM_RULES_EXPORT_VERSION = 1;
 const DEFAULT_COMMAND_SHORTCUTS = {
   "remove-duplicates": "Alt+Shift+D",
   "group-by-domain": "Alt+Shift+G",
+  "ungroup-all-managed": "Alt+Shift+U",
 };
 
 function getDefaultSettings(groupRules) {

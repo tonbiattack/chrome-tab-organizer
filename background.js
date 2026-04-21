@@ -1,9 +1,10 @@
-import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs } from "./src/tab-organizer.browser.js";
+import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs } from "./src/tab-organizer.browser.js";
 import {
   STORAGE_KEYS,
   getDefaultSettings,
   resolvePopupSettings,
   getActiveRules,
+  getManagedRules,
 } from "./src/popup-logic.mjs";
 
 async function loadSettings() {
@@ -32,5 +33,8 @@ chrome.commands.onCommand.addListener(async (command) => {
     for (const [windowId, windowTabs] of windowsMap) {
       await sortAndGroupTabs(windowTabs, windowId, activeRules, { collapsed: collapseGroups });
     }
+  } else if (command === "ungroup-all-managed") {
+    const managedRules = getManagedRules(GROUP_RULES, customRules);
+    await ungroupAllTabs(allWindows, managedRules);
   }
 });
