@@ -225,7 +225,7 @@ describe("sortAndGroupTabs", () => {
     expect(ungroupHistory).toContain(1);
   });
 
-  test("手動で作ったグループ（ルール名と一致しない）はungroupしない", async () => {
+  test("既存グループは手動作成でもungroupする", async () => {
     const tabs = [
       { id: 1, url: "https://github.com/repo", groupId: 20 },
       { id: 2, url: "https://example.com/", groupId: -1 },
@@ -234,7 +234,7 @@ describe("sortAndGroupTabs", () => {
       { id: 20, title: "作業中", windowId: 1 },
     ]);
     await sortAndGroupTabs(tabs, 1);
-    expect(ungroupHistory).not.toContain(1);
+    expect(ungroupHistory).toContain(1);
   });
 
   test("chrome:// URLはスキップする", async () => {
@@ -292,17 +292,16 @@ describe("ungroupAllTabs", () => {
     };
   });
 
-  test("拡張が管理するグループだけを解除する", async () => {
+  test("開いているグループをすべて解除する", async () => {
     const { ungrouped } = await ungroupAllTabs(false);
-    expect(ungrouped).toBe(1);
-    expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(1);
+    expect(ungrouped).toBe(2);
+    expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(2);
     expect(global.chrome.tabs.ungroup).toHaveBeenCalledWith([1, 2]);
+    expect(global.chrome.tabs.ungroup).toHaveBeenCalledWith([3]);
   });
 
-  test("管理対象グループがなければ解除しない", async () => {
-    global.chrome.tabGroups.query = jest.fn(async () => [
-      { id: 20, title: "作業中", windowId: 1 },
-    ]);
+  test("グループがなければ解除しない", async () => {
+    global.chrome.tabGroups.query = jest.fn(async () => []);
     const { ungrouped } = await ungroupAllTabs(false);
     expect(ungrouped).toBe(0);
     expect(global.chrome.tabs.ungroup).not.toHaveBeenCalled();

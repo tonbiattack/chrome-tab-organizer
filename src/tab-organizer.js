@@ -34,10 +34,6 @@ function matchGroup(url, groupRules = GROUP_RULES) {
   return null;
 }
 
-function getRuleNames(groupRules = GROUP_RULES) {
-  return new Set(groupRules.map((rule) => rule.name));
-}
-
 /**
  * 重複URLのタブを削除し、最初に見つかったタブのみ残す
  * @param {chrome.tabs.Tab[]} tabs
@@ -78,21 +74,12 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { coll
     (t) => t.url && !t.url.startsWith("chrome://") && !t.url.startsWith("chrome-extension://")
   );
 
-  // 手動グループ（ルール名と一致しないタイトルのグループ）に属するタブは操作しない
-  const ruleNames = getRuleNames(groupRules);
   const existingGroups = await chrome.tabGroups.query({ windowId });
-  const manualGroupTabIds = new Set(
-    filteredTabs
-      .filter((t) => t.groupId !== -1 && existingGroups.some((g) => g.id === t.groupId && !ruleNames.has(g.title)))
-      .map((t) => t.id)
-  );
 
-  // グループごとにタブを分類（手動グループのタブは除外）
   const groups = new Map();
   const others = [];
 
   for (const tab of filteredTabs) {
-    if (manualGroupTabIds.has(tab.id)) continue;
     const rule = matchGroup(tab.url, groupRules);
     if (rule) {
       if (!groups.has(rule.name)) {
@@ -119,13 +106,10 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { coll
     index++;
   }
 
-  // この拡張が管理するグループ（ルール名と一致するタイトル）だけを解除する
   for (const group of existingGroups) {
-    if (ruleNames.has(group.title)) {
-      const groupTabs = filteredTabs.filter((t) => t.groupId === group.id).map((t) => t.id);
-      if (groupTabs.length > 0) {
-        await chrome.tabs.ungroup(groupTabs);
-      }
+    const groupTabs = filteredTabs.filter((t) => t.groupId === group.id).map((t) => t.id);
+    if (groupTabs.length > 0) {
+      await chrome.tabs.ungroup(groupTabs);
     }
   }
 
@@ -150,18 +134,15 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { coll
 async function ungroupAllTabs(allWindows, groupRules = GROUP_RULES) {
   const tabs = await chrome.tabs.query(allWindows ? {} : { currentWindow: true });
   const groups = await chrome.tabGroups.query(allWindows ? {} : { windowId: chrome.windows.WINDOW_ID_CURRENT });
-  const ruleNames = getRuleNames(groupRules);
-  const managedGroupIds = groups
-    .filter((group) => ruleNames.has(group.title))
-    .map((group) => group.id);
+  const groupIds = groups.map((group) => group.id);
 
-  for (const groupId of managedGroupIds) {
+  for (const groupId of groupIds) {
     const tabIds = tabs.filter((t) => t.groupId === groupId).map((t) => t.id);
     if (tabIds.length > 0) {
       await chrome.tabs.ungroup(tabIds);
     }
   }
-  return { ungrouped: managedGroupIds.length };
+  return { ungrouped: groupIds.length };
 }
 
 if (typeof module !== "undefined") {

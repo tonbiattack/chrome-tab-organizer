@@ -551,7 +551,7 @@ describe("popup logic", () => {
       };
     });
 
-    test("標準ルールとカスタムルールに一致する管理対象だけを解除する", async () => {
+    test("開いているグループをすべて解除する", async () => {
       const managedRules = popupLogic.getManagedRules(GROUP_RULES, [
         {
           id: "rule-1",
@@ -565,10 +565,11 @@ describe("popup logic", () => {
 
       const { ungrouped } = await ungroupAllTabs(false, managedRules);
 
-      expect(ungrouped).toBe(2);
-      expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(2);
+      expect(ungrouped).toBe(3);
+      expect(global.chrome.tabs.ungroup).toHaveBeenCalledTimes(3);
       expect(global.chrome.tabs.ungroup).toHaveBeenNthCalledWith(1, [1]);
       expect(global.chrome.tabs.ungroup).toHaveBeenNthCalledWith(2, [2]);
+      expect(global.chrome.tabs.ungroup).toHaveBeenNthCalledWith(3, [3]);
     });
   });
 });
