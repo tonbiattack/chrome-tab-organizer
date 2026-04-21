@@ -172,11 +172,21 @@ function sanitizeCustomRule(rule) {
     const docIds = parseListInput((rule.docIds ?? []).join(","))
       .filter((docId) => /^[-_a-zA-Z0-9]{25,}$/.test(docId));
 
-    if (issueKeys.length === 0 && docIds.length === 0) {
+    const patterns = parseListInput((rule.patterns ?? []).join("\n"));
+
+    for (const pattern of patterns) {
+      try {
+        new RegExp(pattern, "i");
+      } catch {
+        return null;
+      }
+    }
+
+    if (issueKeys.length === 0 && docIds.length === 0 && patterns.length === 0) {
       return null;
     }
 
-    return { id, name, type, color, enabled, issueKeys, docIds };
+    return { id, name, type, color, enabled, issueKeys, docIds, patterns };
   }
 
   const patterns = parseListInput((rule.patterns ?? []).join("\n"));
@@ -225,6 +235,7 @@ function compileCustomRule(rule) {
       patterns: [
         ...rule.issueKeys.map((issueKey) => new RegExp(buildJiraPattern(issueKey), "i")),
         ...rule.docIds.map((docId) => new RegExp(buildGoogleDocPattern(docId), "i")),
+        ...(rule.patterns ?? []).map((pattern) => new RegExp(pattern, "i")),
       ],
     };
   }
@@ -249,6 +260,7 @@ function createPatternPreview(rule) {
     const parts = [];
     if (rule.issueKeys.length > 0) parts.push(`Jira課題: ${rule.issueKeys.join(", ")}`);
     if (rule.docIds.length > 0) parts.push(`Google Doc: ${rule.docIds.join(", ")}`);
+    if ((rule.patterns ?? []).length > 0) parts.push(rule.patterns.join(", "));
     return parts.join(" / ");
   }
 

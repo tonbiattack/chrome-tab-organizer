@@ -237,6 +237,7 @@ describe("popup logic", () => {
         enabled: true,
         issueKeys: ["PROJ-101", "PROJ-102"],
         docIds: [docId],
+        patterns: [],
       };
       expect(popupLogic.sanitizeCustomRule(rule)).toEqual(rule);
     });
@@ -250,6 +251,7 @@ describe("popup logic", () => {
         enabled: true,
         issueKeys: ["PROJ-101"],
         docIds: [],
+        patterns: [],
       };
       expect(popupLogic.sanitizeCustomRule(rule)).toEqual(rule);
     });
@@ -263,8 +265,51 @@ describe("popup logic", () => {
         enabled: true,
         issueKeys: [],
         docIds: [docId],
+        patterns: [],
       };
       expect(popupLogic.sanitizeCustomRule(rule)).toEqual(rule);
+    });
+
+    test("URLパターンのみでも有効", () => {
+      const rule = {
+        id: "rule-1",
+        name: "スプリント1",
+        type: "combined",
+        color: "blue",
+        enabled: true,
+        issueKeys: [],
+        docIds: [],
+        patterns: ["figma\\.com"],
+      };
+      expect(popupLogic.sanitizeCustomRule(rule)).toEqual(rule);
+    });
+
+    test("3種類すべてを含む combined ルールを返す", () => {
+      const rule = {
+        id: "rule-1",
+        name: "スプリント1",
+        type: "combined",
+        color: "blue",
+        enabled: true,
+        issueKeys: ["PROJ-101"],
+        docIds: [docId],
+        patterns: ["figma\\.com"],
+      };
+      expect(popupLogic.sanitizeCustomRule(rule)).toEqual(rule);
+    });
+
+    test("3つすべてが空なら null を返す", () => {
+      const rule = {
+        id: "rule-1",
+        name: "スプリント1",
+        type: "combined",
+        color: "blue",
+        enabled: true,
+        issueKeys: [],
+        docIds: [],
+        patterns: [],
+      };
+      expect(popupLogic.sanitizeCustomRule(rule)).toBeNull();
     });
 
     test("両方が空なら null を返す", () => {
@@ -289,6 +334,7 @@ describe("popup logic", () => {
         enabled: true,
         issueKeys: ["PROJ-101", "bad-key"],
         docIds: [docId],
+        patterns: [],
       };
       const result = popupLogic.sanitizeCustomRule(rule);
       expect(result.issueKeys).toEqual(["PROJ-101"]);
@@ -308,6 +354,7 @@ describe("popup logic", () => {
         enabled: true,
         issueKeys: ["PROJ-101"],
         docIds: [docId],
+        patterns: [],
       };
       const compiled = popupLogic.compileCustomRule(rule);
 
@@ -328,12 +375,31 @@ describe("popup logic", () => {
         enabled: true,
         issueKeys: [],
         docIds: [docId],
+        patterns: [],
       };
       const compiled = popupLogic.compileCustomRule(rule);
       expect(compiled.patterns).toHaveLength(1);
       expect(compiled.patterns[0].test(
         `https://docs.google.com/spreadsheets/d/${docId}/edit`
       )).toBe(true);
+    });
+
+    test("URLパターンも含む3種類すべてがマッチする", () => {
+      const rule = {
+        id: "rule-1",
+        name: "スプリント1",
+        type: "combined",
+        color: "blue",
+        enabled: true,
+        issueKeys: ["PROJ-101"],
+        docIds: [docId],
+        patterns: ["figma\\.com"],
+      };
+      const compiled = popupLogic.compileCustomRule(rule);
+      expect(compiled.patterns).toHaveLength(3);
+      expect(compiled.patterns[0].test("https://company.atlassian.net/browse/PROJ-101")).toBe(true);
+      expect(compiled.patterns[1].test(`https://docs.google.com/document/d/${docId}/edit`)).toBe(true);
+      expect(compiled.patterns[2].test("https://www.figma.com/file/abc")).toBe(true);
     });
   });
 
@@ -345,18 +411,24 @@ describe("popup logic", () => {
         type: "combined",
         issueKeys: ["PROJ-101"],
         docIds: [docId],
+        patterns: [],
       };
       expect(popupLogic.createPatternPreview(rule)).toBe(`Jira課題: PROJ-101 / Google Doc: ${docId}`);
     });
 
     test("issueKeys のみの場合はJira課題だけ表示", () => {
-      const rule = { type: "combined", issueKeys: ["PROJ-101"], docIds: [] };
+      const rule = { type: "combined", issueKeys: ["PROJ-101"], docIds: [], patterns: [] };
       expect(popupLogic.createPatternPreview(rule)).toBe("Jira課題: PROJ-101");
     });
 
     test("docIds のみの場合はGoogle Docだけ表示", () => {
-      const rule = { type: "combined", issueKeys: [], docIds: [docId] };
+      const rule = { type: "combined", issueKeys: [], docIds: [docId], patterns: [] };
       expect(popupLogic.createPatternPreview(rule)).toBe(`Google Doc: ${docId}`);
+    });
+
+    test("URLパターンも含む3種類すべてを表示する", () => {
+      const rule = { type: "combined", issueKeys: ["PROJ-101"], docIds: [docId], patterns: ["figma\\.com"] };
+      expect(popupLogic.createPatternPreview(rule)).toBe(`Jira課題: PROJ-101 / Google Doc: ${docId} / figma\\.com`);
     });
   });
 

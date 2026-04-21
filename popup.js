@@ -255,7 +255,7 @@ function syncCustomRuleTypeFields() {
   customJiraFieldsEl.hidden = type !== "jira-keys" && type !== "combined";
   customGoogleDocFieldsEl.hidden = type !== "google-doc-ids" && type !== "combined";
   combinedSectionSepEl.hidden = type !== "combined";
-  customPatternFieldsEl.hidden = type !== "url-pattern";
+  customPatternFieldsEl.hidden = type !== "url-pattern" && type !== "combined";
 }
 
 function resetCustomRuleForm() {
@@ -282,6 +282,7 @@ function populateFormWithRule(rule) {
   } else if (rule.type === "combined") {
     customRuleKeysEl.value = rule.issueKeys.join(", ");
     customRuleDocIdsEl.value = rule.docIds.join(", ");
+    customRulePatternsEl.value = (rule.patterns ?? []).join("\n");
   } else {
     customRulePatternsEl.value = rule.patterns.join("\n");
   }
@@ -343,11 +344,21 @@ function buildCustomRuleFromForm() {
     const docIds = parseListInput(customRuleDocIdsEl.value)
       .filter((id) => /^[-_a-zA-Z0-9]{25,}$/.test(id));
 
-    if (issueKeys.length === 0 && docIds.length === 0) {
-      throw new Error("Jira課題キーまたはGoogle Doc IDを1件以上入力してください");
+    const patterns = parseListInput(customRulePatternsEl.value);
+
+    for (const pattern of patterns) {
+      try {
+        new RegExp(pattern, "i");
+      } catch {
+        throw new Error(`無効な正規表現です: ${pattern}`);
+      }
     }
 
-    return { ...base, type, issueKeys, docIds };
+    if (issueKeys.length === 0 && docIds.length === 0 && patterns.length === 0) {
+      throw new Error("Jira課題キー、Google Doc ID、またはURLパターンを1件以上入力してください");
+    }
+
+    return { ...base, type, issueKeys, docIds, patterns };
   }
 
   const patterns = parseListInput(customRulePatternsEl.value);
