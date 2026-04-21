@@ -498,8 +498,8 @@
 
         <div class="form-field">
           <label for="customRuleDocIds">Google Doc ID</label>
-          <textarea id="customRuleDocIds" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"></textarea>
-          <div class="field-help">カンマ区切りまたは改行区切り。ドキュメント・スプレッドシート・スライド・フォームに対応します。</div>
+          <textarea id="customRuleDocIds" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms&#10;1Q2w3E4r5T6y7U8i9O0pAaBbCcDdEeFfGgHhIiJj"></textarea>
+          <div class="field-help">カンマ区切りまたは改行区切り。複数指定例: <code>1abc..., 1def...</code> または改行で1件ずつ。<br>URL例: <code>.../document/d/&lt;doc-id&gt;/edit</code> / <code>.../spreadsheets/d/&lt;doc-id&gt;/edit</code></div>
           <div class="inline-actions">
             <button class="btn btn-ghost" id="fillGoogleDocIds" type="button">現在のGoogleドキュメントタブから取得</button>
           </div>
@@ -508,7 +508,7 @@
         <div class="form-field">
           <label for="customRulePatterns">URLパターン</label>
           <textarea id="customRulePatterns" placeholder="figma\.com&#10;miro\.com"></textarea>
-          <div class="field-help">正規表現を改行またはカンマ区切りで入力します。大文字小文字は区別しません。</div>
+          <div class="field-help">正規表現を改行またはカンマ区切りで入力します。複数指定例: <code>figma\.com, miro\.com</code> または改行で1件ずつ。大文字小文字は区別しません。</div>
         </div>
 
         <button class="btn btn-tertiary" id="customRuleSubmit" type="submit">カスタムルールを追加</button>
