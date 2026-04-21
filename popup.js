@@ -17,10 +17,15 @@ import {
   parseListInput,
   serializeCustomRules,
   parseImportedCustomRules,
+  resolveCommandShortcuts,
 } from "./src/popup-logic.mjs";
 
 const statusEl = document.getElementById("status");
 const tabCountEl = document.getElementById("tabCount");
+const btnDedupEl = document.getElementById("btnDedup");
+const btnSortEl = document.getElementById("btnSort");
+const shortcutRemoveDuplicatesEl = document.getElementById("shortcutRemoveDuplicates");
+const shortcutGroupByDomainEl = document.getElementById("shortcutGroupByDomain");
 const ruleListEl = document.getElementById("ruleList");
 const allWindowsEl = document.getElementById("allWindows");
 const collapseGroupsEl = document.getElementById("collapseGroups");
@@ -415,9 +420,33 @@ async function updateTabCount() {
   }
 }
 
+async function renderCommandShortcuts() {
+  if (!chrome?.commands?.getAll) {
+    return;
+  }
+
+  const shortcuts = resolveCommandShortcuts(await chrome.commands.getAll());
+  const shortcutElements = {
+    "remove-duplicates": shortcutRemoveDuplicatesEl,
+    "group-by-domain": shortcutGroupByDomainEl,
+  };
+
+  for (const [commandName, element] of Object.entries(shortcutElements)) {
+    const shortcut = shortcuts[commandName];
+    if (!shortcut) {
+      element.hidden = true;
+      continue;
+    }
+
+    element.textContent = shortcut;
+    element.hidden = false;
+  }
+}
+
 async function init() {
   await loadSettings();
   await updateTabCount();
+  await renderCommandShortcuts();
   renderRules();
   renderCustomRules();
   resetCustomRuleForm();
@@ -567,7 +596,7 @@ fillGoogleDocIdsEl.addEventListener("click", async () => {
   }
 });
 
-document.getElementById("btnDedup").addEventListener("click", async () => {
+btnDedupEl.addEventListener("click", async () => {
   const tabs = await getTargetTabs();
   try {
     const { removed } = await removeDuplicateTabs(tabs);
@@ -582,7 +611,7 @@ document.getElementById("btnDedup").addEventListener("click", async () => {
   }
 });
 
-document.getElementById("btnSort").addEventListener("click", async () => {
+btnSortEl.addEventListener("click", async () => {
   const activeRules = getActiveRules();
   const tabs = await getTargetTabs();
   const windowsMap = groupTabsByWindow(tabs);

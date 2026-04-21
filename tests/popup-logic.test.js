@@ -499,6 +499,31 @@ describe("popup logic", () => {
     });
   });
 
+  describe("resolveCommandShortcuts", () => {
+    test("chrome.commands の割り当てを popup 表示用に解決する", () => {
+      const shortcuts = popupLogic.resolveCommandShortcuts([
+        { name: "remove-duplicates", shortcut: "Ctrl+Shift+D" },
+        { name: "group-by-domain", shortcut: "Ctrl+Shift+G" },
+      ]);
+
+      expect(shortcuts).toEqual({
+        "remove-duplicates": "Ctrl+Shift+D",
+        "group-by-domain": "Ctrl+Shift+G",
+      });
+    });
+
+    test("割り当てが空なら既定の suggested_key を使う", () => {
+      const shortcuts = popupLogic.resolveCommandShortcuts([
+        { name: "remove-duplicates", shortcut: "" },
+      ]);
+
+      expect(shortcuts).toEqual({
+        "remove-duplicates": "Alt+Shift+D",
+        "group-by-domain": "Alt+Shift+G",
+      });
+    });
+  });
+
   describe("ungroupAllTabs", () => {
     beforeEach(() => {
       global.chrome = {
