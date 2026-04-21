@@ -30,8 +30,10 @@
 - 実行結果のステータスメッセージ表示
 - 標準ルールの凡例表示・個別チェックボックスによる有効/無効切り替え
 - 標準ルールの一括選択 / 一括解除
-- カスタムルールの追加 / 削除 / 有効化
+- カスタムルールの追加 / 編集 / 削除 / 有効化
+- カスタムルールの import / export
 - Jira タブ URL から課題キー抽出
+- Google ドキュメント URL から Doc ID 抽出
 - 整理後にグループを折りたたむオプション（`collapseGroups` 設定）
 - 拡張が管理するグループだけを解除する（`ungroupAllTabs`）
 
@@ -52,10 +54,11 @@ npm run test:coverage
 既存テストでは次を確認しています。
 
 - URL 正規化
-- サービス判定（Jira / GitHub / Slack / Notion / Google / ChatGPT / Qiita / Zenn / Amazon / YouTube）
+- サービス判定（Confluence / Jira / GitHub / Slack / Notion / Gemini / Google / ChatGPT / Qiita / Zenn / Amazon / YouTube）
 - 重複タブ削除
 - タブ並び替えとグループ化
 - グループの一括解除（`ungroupAllTabs`）
+- popup 純粋ロジック（設定復元、カスタムルール優先順位、Jira / Google Doc 抽出、import / export）
 - ルール定義の整合性（名前の重複なし・Chrome 許可色のみ使用）
 
 ## Chrome での確認手順
@@ -68,7 +71,8 @@ npm run test:coverage
 6. `整理後にグループを折りたたむ` を ON にして整理し、グループが折りたたまれることを確認する
 7. 標準ルールの `すべて解除` → `ドメインごとに整理` が正常に動作することを確認する（グループ化なしで並び替えのみ実行される）
 8. `グループをすべて解除` を押し、ルール名と一致するグループだけが解除され、手動グループは残ることを確認する
-9. カスタムルールの追加 / 削除 / 有効化を確認する
+9. カスタムルールの追加 / 編集 / 削除 / 有効化を確認する
+10. カスタムルールのエクスポートとインポートを確認する
 
 ## 変更時の注意点
 
@@ -79,12 +83,12 @@ npm run test:coverage
 - `ungroupAllTabs` も同じ判定を使い、ルール名と一致するタイトルのグループだけを解除する
 - popup で `chrome.storage` を使うため、`manifest.json` に `storage` 権限が必要
 - カスタム URL パターンは保存時と読込時の両方で正規表現として検証している
+- カスタムルールの import / export は JSON 形式で行い、対象はカスタムルールのみ
 - 標準ルールをすべて解除した状態でも整理ボタンは正常動作する（グループ化なし・タブ並び替えのみ）
 - `sortAndGroupTabs` の第 4 引数 `{ collapsed }` でグループの折りたたみ状態を制御できる
 - タイトル一致ベースのため、手動グループでもルール名と同名なら管理対象として扱われる
 
 ## 改善余地
 
-- `GROUP_RULES` の定義重複をビルドや生成で解消する
 - popup UI のスクリーンショットを README に追加する
 - Jira API と連携して親課題やエピック名から自動でルール生成する
