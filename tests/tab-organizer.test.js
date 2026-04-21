@@ -43,6 +43,14 @@ describe("matchGroup", () => {
     expect(matchGroup("https://docs.google.com/document/d/abc")).toMatchObject({ name: "Google" });
   });
 
+  test("Google Calendarのドメインを検出する", () => {
+    expect(matchGroup("https://calendar.google.com/calendar/r")).toMatchObject({ name: "Calendar" });
+  });
+
+  test("Google CalendarはGoogleグループに含まれない", () => {
+    expect(matchGroup("https://calendar.google.com/calendar/r")).not.toMatchObject({ name: "Google" });
+  });
+
   test("Geminiのドメインを検出する", () => {
     expect(matchGroup("https://gemini.google.com/app")).toMatchObject({ name: "Gemini" });
   });

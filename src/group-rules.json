@@ -30,9 +30,14 @@
     "patterns": ["gemini\\.google\\.com"]
   },
   {
+    "name": "Calendar",
+    "color": "blue",
+    "patterns": ["calendar\\.google\\.com"]
+  },
+  {
     "name": "Google",
     "color": "green",
-    "patterns": ["google\\.com", "docs\\.google\\.com", "drive\\.google\\.com"]
+    "patterns": ["docs\\.google\\.com", "drive\\.google\\.com"]
   },
   {
     "name": "ChatGPT",
