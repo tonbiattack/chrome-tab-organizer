@@ -13,6 +13,7 @@
 - Jira 課題キーや Google Doc ID を使って任意名のグループを作る
 - カスタムルールを JSON でインポート / エクスポートする
 - 拡張が管理するグループだけを解除する
+- 開いているタブを一時的にグループ化する
 
 ## 動作概要
 
@@ -136,6 +137,7 @@ popup では次も操作できます。
 ├── popup.js
 ├── src/
 │   ├── group-rules.json
+│   ├── group-rules.module.js
 │   ├── popup-logic.mjs
 │   ├── tab-organizer.js
 │   └── tab-organizer.browser.js
@@ -152,6 +154,7 @@ popup では次も操作できます。
 主要ファイル:
 
 - `src/group-rules.json`: 標準グループルールの単一定義
+- `src/group-rules.module.js`: browser 向けの標準グループルール定義
 - `src/popup-logic.mjs`: popup で使う純粋ロジック
 - `src/tab-organizer.js`: テスト対象の CommonJS 実装
 - `src/tab-organizer.browser.js`: popup から import するブラウザ向け ESM 実装
@@ -209,6 +212,7 @@ popup には現在のショートカット割り当てを表示します。Chrom
 - グループ化時は、ルール名と一致する既存グループだけを解除して再構成します
 - `グループをすべて解除` は、標準ルール名またはカスタムルール名と一致するグループだけを対象にします
 - 手動で作ったグループでも、ルール名と同じタイトルを付けると管理対象として扱われます
+- この拡張は開いているタブの一時整理を前提にしていて、保存済みタブグループの管理は行いません
 - Jira の親子関係そのものは Jira API から自動取得していません。現時点では課題キー集合をユーザーが定義する方式です
 - Google Doc ID は URL から抽出または手入力で指定します
 - 会社管理の Chrome 環境では、未署名拡張の読み込みが制限されることがあります
