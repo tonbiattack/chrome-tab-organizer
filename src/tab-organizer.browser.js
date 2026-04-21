@@ -1,4 +1,11 @@
-import groupRulesData from "./group-rules.json" with { type: "json" };
+const GROUP_RULES_URL = chrome.runtime.getURL("src/group-rules.json");
+
+const groupRulesData = await fetch(GROUP_RULES_URL).then(async (response) => {
+  if (!response.ok) {
+    throw new Error(`Failed to load group rules: ${response.status}`);
+  }
+  return response.json();
+});
 
 const GROUP_RULES = groupRulesData.map((rule) => ({
   ...rule,
