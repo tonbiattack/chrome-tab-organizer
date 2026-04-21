@@ -432,6 +432,73 @@ describe("popup logic", () => {
     });
   });
 
+  describe("custom rule import/export", () => {
+    test("カスタムルールをエクスポート用 JSON に変換する", () => {
+      const jsonText = popupLogic.serializeCustomRules([
+        {
+          id: "rule-1",
+          name: "親課題A",
+          type: "jira-keys",
+          color: "red",
+          enabled: true,
+          issueKeys: ["PROJ-101"],
+        },
+      ]);
+
+      const parsed = JSON.parse(jsonText);
+      expect(parsed.version).toBe(1);
+      expect(parsed.customRules).toHaveLength(1);
+      expect(parsed.customRules[0].name).toBe("親課題A");
+    });
+
+    test("エクスポート JSON からカスタムルールを復元する", () => {
+      const imported = popupLogic.parseImportedCustomRules(JSON.stringify({
+        version: 1,
+        customRules: [
+          {
+            id: "rule-1",
+            name: "親課題A",
+            type: "jira-keys",
+            color: "red",
+            enabled: true,
+            issueKeys: ["PROJ-101"],
+          },
+        ],
+      }));
+
+      expect(imported).toEqual([
+        {
+          id: "rule-1",
+          name: "親課題A",
+          type: "jira-keys",
+          color: "red",
+          enabled: true,
+          issueKeys: ["PROJ-101"],
+        },
+      ]);
+    });
+
+    test("配列形式でもインポートできる", () => {
+      const imported = popupLogic.parseImportedCustomRules(JSON.stringify([
+        {
+          id: "rule-1",
+          name: "親課題A",
+          type: "jira-keys",
+          color: "red",
+          enabled: true,
+          issueKeys: ["PROJ-101"],
+        },
+      ]));
+
+      expect(imported).toHaveLength(1);
+      expect(imported[0].name).toBe("親課題A");
+    });
+
+    test("不正な JSON ならエラーにする", () => {
+      expect(() => popupLogic.parseImportedCustomRules("{")).toThrow("JSON形式が不正です");
+    });
+  });
+
   describe("ungroupAllTabs", () => {
     beforeEach(() => {
       global.chrome = {
