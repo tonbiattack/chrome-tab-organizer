@@ -1,4 +1,4 @@
-import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs } from "./src/tab-organizer.browser.js";
+import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs } from "./src/tab-organizer.sw.js";
 import {
   STORAGE_KEYS,
   getDefaultSettings,
