@@ -35,6 +35,7 @@ const customJiraFieldsEl = document.getElementById("customJiraFields");
 const customGoogleDocFieldsEl = document.getElementById("customGoogleDocFields");
 const fillJiraKeysEl = document.getElementById("fillJiraKeys");
 const fillGoogleDocIdsEl = document.getElementById("fillGoogleDocIds");
+const combinedSectionSepEl = document.getElementById("combinedSectionSep");
 const formTitleEl = document.getElementById("formTitle");
 const customRuleSubmitEl = document.getElementById("customRuleSubmit");
 const cancelRuleEditEl = document.getElementById("cancelRuleEdit");
@@ -251,8 +252,9 @@ function renderCustomRules() {
 
 function syncCustomRuleTypeFields() {
   const type = customRuleTypeEl.value;
-  customJiraFieldsEl.hidden = type !== "jira-keys";
-  customGoogleDocFieldsEl.hidden = type !== "google-doc-ids";
+  customJiraFieldsEl.hidden = type !== "jira-keys" && type !== "combined";
+  customGoogleDocFieldsEl.hidden = type !== "google-doc-ids" && type !== "combined";
+  combinedSectionSepEl.hidden = type !== "combined";
   customPatternFieldsEl.hidden = type !== "url-pattern";
 }
 
@@ -276,6 +278,9 @@ function populateFormWithRule(rule) {
   if (rule.type === "jira-keys") {
     customRuleKeysEl.value = rule.issueKeys.join(", ");
   } else if (rule.type === "google-doc-ids") {
+    customRuleDocIdsEl.value = rule.docIds.join(", ");
+  } else if (rule.type === "combined") {
+    customRuleKeysEl.value = rule.issueKeys.join(", ");
     customRuleDocIdsEl.value = rule.docIds.join(", ");
   } else {
     customRulePatternsEl.value = rule.patterns.join("\n");
@@ -328,6 +333,21 @@ function buildCustomRuleFromForm() {
     }
 
     return { ...base, type, docIds };
+  }
+
+  if (type === "combined") {
+    const issueKeys = parseListInput(customRuleKeysEl.value)
+      .map((key) => key.toUpperCase())
+      .filter((key) => /^[A-Z][A-Z0-9_]*-\d+$/.test(key));
+
+    const docIds = parseListInput(customRuleDocIdsEl.value)
+      .filter((id) => /^[-_a-zA-Z0-9]{25,}$/.test(id));
+
+    if (issueKeys.length === 0 && docIds.length === 0) {
+      throw new Error("Jira課題キーまたはGoogle Doc IDを1件以上入力してください");
+    }
+
+    return { ...base, type, issueKeys, docIds };
   }
 
   const patterns = parseListInput(customRulePatternsEl.value);
