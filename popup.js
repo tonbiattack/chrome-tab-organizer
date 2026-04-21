@@ -35,6 +35,9 @@ const customJiraFieldsEl = document.getElementById("customJiraFields");
 const customGoogleDocFieldsEl = document.getElementById("customGoogleDocFields");
 const fillJiraKeysEl = document.getElementById("fillJiraKeys");
 const fillGoogleDocIdsEl = document.getElementById("fillGoogleDocIds");
+const formTitleEl = document.getElementById("formTitle");
+const customRuleSubmitEl = document.getElementById("customRuleSubmit");
+const cancelRuleEditEl = document.getElementById("cancelRuleEdit");
 const RULE_COLORS = {
   blue: "#3b82f6",
   purple: "#a855f7",
@@ -50,6 +53,7 @@ const RULE_COLORS = {
 
 let enabledRuleNames = new Set(GROUP_RULES.map((rule) => rule.name));
 let customRules = [];
+let editingRuleId = null;
 
 function showStatus(message, type = "success") {
   statusEl.textContent = message;
@@ -215,18 +219,32 @@ function renderCustomRules() {
     label.appendChild(dot);
     label.appendChild(text);
 
+    const actions = document.createElement("div");
+    actions.className = "rule-actions";
+
+    const editButton = document.createElement("button");
+    editButton.type = "button";
+    editButton.className = "rule-edit";
+    editButton.textContent = "編集";
+    editButton.addEventListener("click", () => {
+      populateFormWithRule(rule);
+    });
+
     const deleteButton = document.createElement("button");
     deleteButton.type = "button";
     deleteButton.className = "rule-delete";
     deleteButton.textContent = "削除";
     deleteButton.addEventListener("click", async () => {
+      if (editingRuleId === rule.id) resetCustomRuleForm();
       customRules = customRules.filter((customRule) => customRule.id !== rule.id);
       await saveCustomRules();
       renderCustomRules();
     });
 
+    actions.appendChild(editButton);
+    actions.appendChild(deleteButton);
     item.appendChild(label);
-    item.appendChild(deleteButton);
+    item.appendChild(actions);
     customRuleListEl.appendChild(item);
   }
 }
@@ -243,6 +261,31 @@ function resetCustomRuleForm() {
   customRuleColorEl.value = "blue";
   customRuleTypeEl.value = "jira-keys";
   syncCustomRuleTypeFields();
+  editingRuleId = null;
+  formTitleEl.textContent = "ルール追加";
+  customRuleSubmitEl.textContent = "カスタムルールを追加";
+  cancelRuleEditEl.hidden = true;
+}
+
+function populateFormWithRule(rule) {
+  editingRuleId = rule.id;
+  customRuleNameEl.value = rule.name;
+  customRuleColorEl.value = rule.color;
+  customRuleTypeEl.value = rule.type;
+
+  if (rule.type === "jira-keys") {
+    customRuleKeysEl.value = rule.issueKeys.join(", ");
+  } else if (rule.type === "google-doc-ids") {
+    customRuleDocIdsEl.value = rule.docIds.join(", ");
+  } else {
+    customRulePatternsEl.value = rule.patterns.join("\n");
+  }
+
+  syncCustomRuleTypeFields();
+  formTitleEl.textContent = "ルール編集";
+  customRuleSubmitEl.textContent = "カスタムルールを更新";
+  cancelRuleEditEl.hidden = false;
+  customRuleFormEl.scrollIntoView({ behavior: "smooth" });
 }
 
 function buildCustomRuleFromForm() {
@@ -368,19 +411,35 @@ document.getElementById("btnUncheckAll").addEventListener("click", async () => {
 
 customRuleTypeEl.addEventListener("change", syncCustomRuleTypeFields);
 
+cancelRuleEditEl.addEventListener("click", resetCustomRuleForm);
+
 customRuleFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   try {
     const customRule = buildCustomRuleFromForm();
-    if (customRules.some((rule) => rule.name === customRule.name)) {
-      throw new Error("同じグループ名のカスタムルールは追加できません");
+
+    if (editingRuleId) {
+      const index = customRules.findIndex((r) => r.id === editingRuleId);
+      if (index === -1) throw new Error("編集対象のルールが見つかりませんでした");
+      if (customRules.some((r) => r.name === customRule.name && r.id !== editingRuleId)) {
+        throw new Error("同じグループ名のカスタムルールは追加できません");
+      }
+      customRules[index] = { ...customRule, id: editingRuleId, enabled: customRules[index].enabled };
+      await saveCustomRules();
+      renderCustomRules();
+      resetCustomRuleForm();
+      showStatus(`カスタムルール「${customRule.name}」を更新しました`, "success");
+    } else {
+      if (customRules.some((rule) => rule.name === customRule.name)) {
+        throw new Error("同じグループ名のカスタムルールは追加できません");
+      }
+      customRules.push(customRule);
+      await saveCustomRules();
+      renderCustomRules();
+      resetCustomRuleForm();
+      showStatus(`カスタムルール「${customRule.name}」を追加しました`, "success");
     }
-    customRules.push(customRule);
-    await saveCustomRules();
-    renderCustomRules();
-    resetCustomRuleForm();
-    showStatus(`カスタムルール「${customRule.name}」を追加しました`, "success");
   } catch (error) {
     showStatus(`エラー: ${error.message}`, "error");
   }

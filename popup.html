@@ -199,6 +199,27 @@
       align-items: flex-start;
     }
 
+    .rule-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+
+    .rule-edit {
+      border: none;
+      background: #dbeafe;
+      color: #1e40af;
+      border-radius: 6px;
+      padding: 6px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .rule-edit:hover {
+      background: #bfdbfe;
+    }
+
     .rule-delete {
       border: none;
       background: #fee2e2;
@@ -394,7 +415,7 @@
     </div>
 
     <div class="group-rules">
-      <h2>ルール追加</h2>
+      <h2 id="formTitle">ルール追加</h2>
       <form id="customRuleForm" class="form-grid">
         <div class="form-field">
           <label for="customRuleName">グループ名</label>
@@ -449,7 +470,8 @@
           <div class="field-help">正規表現を改行またはカンマ区切りで入力します。大文字小文字は区別しません。</div>
         </div>
 
-        <button class="btn btn-tertiary" type="submit">カスタムルールを追加</button>
+        <button class="btn btn-tertiary" id="customRuleSubmit" type="submit">カスタムルールを追加</button>
+        <button class="btn btn-ghost" id="cancelRuleEdit" type="button" hidden>キャンセル</button>
       </form>
     </div>
   </div>
