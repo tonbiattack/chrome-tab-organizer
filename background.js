@@ -21,6 +21,13 @@ function groupTabsByWindow(tabs) {
   return map;
 }
 
+chrome.runtime.onStartup.addListener(async () => {
+  const { customRules } = await loadSettings();
+  const customRuleNames = new Set(customRules.map((r) => r.name));
+  const defaultOnlyRules = GROUP_RULES.filter((r) => !customRuleNames.has(r.name));
+  await ungroupAllTabs(true, defaultOnlyRules);
+});
+
 chrome.commands.onCommand.addListener(async (command) => {
   const { allWindows, collapseGroups, enabledRuleNames, customRules } = await loadSettings();
   const tabs = await chrome.tabs.query(allWindows ? {} : { currentWindow: true });
