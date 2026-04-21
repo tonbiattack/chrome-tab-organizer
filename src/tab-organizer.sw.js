@@ -109,4 +109,13 @@ async function ungroupAllTabs(allWindows, groupRules = GROUP_RULES) {
   return { ungrouped: managedGroupIds.length };
 }
 
-export { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs };
+async function ungroupAllTabsForce(allWindows) {
+  const tabs = await chrome.tabs.query(allWindows ? {} : { currentWindow: true });
+  const grouped = tabs.filter((t) => t.groupId !== -1);
+  if (grouped.length > 0) {
+    await chrome.tabs.ungroup(grouped.map((t) => t.id));
+  }
+  return { ungrouped: grouped.length };
+}
+
+export { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs, ungroupAllTabsForce };

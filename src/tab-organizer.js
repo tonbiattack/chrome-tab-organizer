@@ -164,6 +164,15 @@ async function ungroupAllTabs(allWindows, groupRules = GROUP_RULES) {
   return { ungrouped: managedGroupIds.length };
 }
 
+async function ungroupAllTabsForce(allWindows) {
+  const tabs = await chrome.tabs.query(allWindows ? {} : { currentWindow: true });
+  const grouped = tabs.filter((t) => t.groupId !== -1);
+  if (grouped.length > 0) {
+    await chrome.tabs.ungroup(grouped.map((t) => t.id));
+  }
+  return { ungrouped: grouped.length };
+}
+
 if (typeof module !== "undefined") {
-  module.exports = { normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs, GROUP_RULES };
+  module.exports = { normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs, ungroupAllTabsForce, GROUP_RULES };
 }

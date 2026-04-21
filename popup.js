@@ -1,4 +1,4 @@
-import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs } from "./src/tab-organizer.browser.js";
+import { GROUP_RULES, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs, ungroupAllTabsForce } from "./src/tab-organizer.browser.js";
 import {
   STORAGE_KEYS,
   ALLOWED_COLORS,
@@ -23,6 +23,7 @@ const tabCountEl = document.getElementById("tabCount");
 const btnDedupEl = document.getElementById("btnDedup");
 const btnSortEl = document.getElementById("btnSort");
 const btnUngroupAllEl = document.getElementById("btnUngroupAll");
+const btnUngroupForceEl = document.getElementById("btnUngroupForce");
 const shortcutRemoveDuplicatesEl = document.getElementById("shortcutRemoveDuplicates");
 const shortcutGroupByDomainEl = document.getElementById("shortcutGroupByDomain");
 const shortcutUngroupAllEl = document.getElementById("shortcutUngroupAll");
@@ -455,6 +456,19 @@ btnUngroupAllEl.addEventListener("click", async () => {
       showStatus("解除するグループはありませんでした", "success");
     } else {
       showStatus(`${ungrouped} 件のグループを解除しました`, "success");
+    }
+  } catch (e) {
+    showStatus(`エラー: ${e.message}`, "error");
+  }
+});
+
+btnUngroupForceEl.addEventListener("click", async () => {
+  try {
+    const { ungrouped } = await ungroupAllTabsForce(allWindowsEl.checked);
+    if (ungrouped === 0) {
+      showStatus("解除するグループはありませんでした", "success");
+    } else {
+      showStatus(`${ungrouped} 件のグループをすべて解除しました`, "success");
     }
   } catch (e) {
     showStatus(`エラー: ${e.message}`, "error");

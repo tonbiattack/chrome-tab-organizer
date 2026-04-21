@@ -1,4 +1,4 @@
-const { normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs, GROUP_RULES } = require("../src/tab-organizer");
+const { normalizeUrl, matchGroup, removeDuplicateTabs, sortAndGroupTabs, ungroupAllTabs, ungroupAllTabsForce, GROUP_RULES } = require("../src/tab-organizer");
 
 // --- normalizeUrl ---
 
@@ -318,6 +318,53 @@ describe("ungroupAllTabs", () => {
     await ungroupAllTabs(false);
     expect(global.chrome.tabs.query).toHaveBeenCalledWith({ currentWindow: true });
     expect(global.chrome.tabGroups.query).toHaveBeenCalledWith({ windowId: -2 });
+  });
+});
+
+// --- ungroupAllTabsForce ---
+
+describe("ungroupAllTabsForce", () => {
+  beforeEach(() => {
+    global.chrome = {
+      windows: {
+        WINDOW_ID_CURRENT: -2,
+      },
+      tabs: {
+        query: jest.fn(async () => [
+          { id: 1, groupId: 10 },
+          { id: 2, groupId: 10 },
+          { id: 3, groupId: 20 },
+          { id: 4, groupId: -1 },
+        ]),
+        ungroup: jest.fn(async () => {}),
+      },
+    };
+  });
+
+  test("グループに属するタブをすべて解除する（手動グループ含む）", async () => {
+    const { ungrouped } = await ungroupAllTabsForce(false);
+    expect(ungrouped).toBe(3);
+    expect(global.chrome.tabs.ungroup).toHaveBeenCalledWith([1, 2, 3]);
+  });
+
+  test("グループがなければ解除しない", async () => {
+    global.chrome.tabs.query = jest.fn(async () => [
+      { id: 1, groupId: -1 },
+      { id: 2, groupId: -1 },
+    ]);
+    const { ungrouped } = await ungroupAllTabsForce(false);
+    expect(ungrouped).toBe(0);
+    expect(global.chrome.tabs.ungroup).not.toHaveBeenCalled();
+  });
+
+  test("allWindows=true のとき全ウィンドウを対象にクエリする", async () => {
+    await ungroupAllTabsForce(true);
+    expect(global.chrome.tabs.query).toHaveBeenCalledWith({});
+  });
+
+  test("allWindows=false のとき現在のウィンドウのみクエリする", async () => {
+    await ungroupAllTabsForce(false);
+    expect(global.chrome.tabs.query).toHaveBeenCalledWith({ currentWindow: true });
   });
 });
 
