@@ -168,7 +168,17 @@ async function sortAndGroupTabs(tabs, windowId, groupRules = GROUP_RULES, { coll
 
 async function ungroupAllTabs(allWindows, groupRules = GROUP_RULES) {
   const tabs = await chrome.tabs.query(allWindows ? {} : { currentWindow: true });
-  const groups = await chrome.tabGroups.query(allWindows ? {} : { windowId: chrome.windows.WINDOW_ID_CURRENT });
+  let groups;
+  if (allWindows) {
+    groups = await chrome.tabGroups.query({});
+  } else {
+    const [currentWindow] = await chrome.windows.getAll({ windowTypes: ["normal"] }).then(
+      (ws) => ws.filter((w) => w.focused)
+    );
+    groups = currentWindow
+      ? await chrome.tabGroups.query({ windowId: currentWindow.id })
+      : [];
+  }
   const ruleNames = getRuleNames(groupRules);
   const managedGroupIds = groups
     .filter((group) => ruleNames.has(group.title))

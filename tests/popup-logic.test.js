@@ -307,6 +307,7 @@ describe("popup logic", () => {
       global.chrome = {
         windows: {
           WINDOW_ID_CURRENT: -2,
+          getAll: jest.fn(async () => [{ id: 1, focused: true, type: "normal" }]),
         },
         tabs: {
           query: jest.fn(async () => [
