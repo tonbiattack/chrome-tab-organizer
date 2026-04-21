@@ -455,7 +455,7 @@
 
     <div class="group-rules">
       <h2>カスタムルール</h2>
-      <p class="section-desc">Jira課題キーやGoogle Doc IDをまとめて、任意の名前でグループ化できます。</p>
+      <p class="section-desc">Jira課題キー、Google Doc ID、URLパターンを任意に組み合わせて、ひとつのルールとしてグループ化できます。</p>
       <div class="inline-actions" style="margin-bottom: 8px;">
         <button class="btn btn-ghost" id="btnExportCustomRules" type="button">エクスポート</button>
         <button class="btn btn-ghost" id="btnImportCustomRules" type="button">インポート</button>
@@ -488,16 +488,6 @@
         </div>
 
         <div class="form-field">
-          <label for="customRuleType">ルール種別</label>
-          <select id="customRuleType">
-            <option value="jira-keys">Jira課題キー</option>
-            <option value="google-doc-ids">Google Doc ID</option>
-            <option value="combined">Jira課題キー + Google Doc ID</option>
-            <option value="url-pattern">URLパターン</option>
-          </select>
-        </div>
-
-        <div class="form-field" id="customJiraFields">
           <label for="customRuleKeys">Jira課題キー</label>
           <textarea id="customRuleKeys" placeholder="PROJ-101, PROJ-102"></textarea>
           <div class="field-help">カンマ区切りまたは改行区切り。親子課題をまとめたいときは、同じ親に属する課題キーを並べてください。</div>
@@ -506,7 +496,7 @@
           </div>
         </div>
 
-        <div class="form-field" id="customGoogleDocFields" hidden>
+        <div class="form-field">
           <label for="customRuleDocIds">Google Doc ID</label>
           <textarea id="customRuleDocIds" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"></textarea>
           <div class="field-help">カンマ区切りまたは改行区切り。ドキュメント・スプレッドシート・スライド・フォームに対応します。</div>
@@ -515,9 +505,7 @@
           </div>
         </div>
 
-        <div id="combinedSectionSep" hidden style="height:1px;background:#e5e7eb;margin:4px 0;"></div>
-
-        <div class="form-field" id="customPatternFields" hidden>
+        <div class="form-field">
           <label for="customRulePatterns">URLパターン</label>
           <textarea id="customRulePatterns" placeholder="figma\.com&#10;miro\.com"></textarea>
           <div class="field-help">正規表現を改行またはカンマ区切りで入力します。大文字小文字は区別しません。</div>
