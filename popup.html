@@ -286,7 +286,6 @@
     }
 
     .form-field input,
-    .form-field select,
     .form-field textarea {
       width: 100%;
       border: 1px solid #d1d5db;
@@ -301,6 +300,44 @@
     .form-field textarea {
       resize: vertical;
       min-height: 72px;
+    }
+
+    .color-palette {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .color-chip {
+      border: 1px solid #d1d5db;
+      background: #fff;
+      border-radius: 999px;
+      padding: 4px 8px 4px 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      color: #374151;
+      cursor: pointer;
+      transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+
+    .color-chip:hover {
+      border-color: #93c5fd;
+    }
+
+    .color-chip.is-selected {
+      border-color: #2563eb;
+      box-shadow: 0 0 0 2px #bfdbfe;
+    }
+
+    .color-chip-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      flex-shrink: 0;
     }
 
     .field-help {
@@ -474,17 +511,8 @@
 
         <div class="form-field">
           <label for="customRuleColor">グループ色</label>
-          <select id="customRuleColor">
-            <option value="blue">blue</option>
-            <option value="cyan">cyan</option>
-            <option value="green">green</option>
-            <option value="grey">grey</option>
-            <option value="orange">orange</option>
-            <option value="pink">pink</option>
-            <option value="purple">purple</option>
-            <option value="red">red</option>
-            <option value="yellow">yellow</option>
-          </select>
+          <div id="customRuleColorPalette" class="color-palette" role="radiogroup" aria-label="グループ色"></div>
+          <input id="customRuleColor" type="hidden" value="blue">
         </div>
 
         <div class="form-field">
