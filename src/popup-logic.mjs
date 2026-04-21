@@ -7,6 +7,10 @@ const STORAGE_KEYS = {
 
 const ALLOWED_COLORS = ["blue", "cyan", "green", "grey", "orange", "pink", "purple", "red", "yellow"];
 const CUSTOM_RULES_EXPORT_VERSION = 1;
+const DEFAULT_COMMAND_SHORTCUTS = {
+  "remove-duplicates": "Alt+Shift+D",
+  "group-by-domain": "Alt+Shift+G",
+};
 
 function getDefaultSettings(groupRules) {
   return {
@@ -309,10 +313,22 @@ function parseImportedCustomRules(jsonText) {
   return customRules;
 }
 
+function resolveCommandShortcuts(commands, fallbackShortcuts = DEFAULT_COMMAND_SHORTCUTS) {
+  const shortcuts = {};
+
+  for (const [commandName, fallbackShortcut] of Object.entries(fallbackShortcuts)) {
+    const command = commands.find((item) => item.name === commandName);
+    shortcuts[commandName] = command?.shortcut || fallbackShortcut || "未設定";
+  }
+
+  return shortcuts;
+}
+
 export {
   STORAGE_KEYS,
   ALLOWED_COLORS,
   CUSTOM_RULES_EXPORT_VERSION,
+  DEFAULT_COMMAND_SHORTCUTS,
   getDefaultSettings,
   buildEnabledRuleNames,
   resolvePopupSettings,
@@ -333,4 +349,5 @@ export {
   createPatternPreview,
   serializeCustomRules,
   parseImportedCustomRules,
+  resolveCommandShortcuts,
 };
