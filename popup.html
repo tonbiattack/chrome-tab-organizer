@@ -410,7 +410,7 @@
 
     <div class="group-rules">
       <h2>カスタムルール</h2>
-      <p class="section-desc">Jira課題キーをまとめて、親課題名やエピック名など任意の名前でグループ化できます。</p>
+      <p class="section-desc">Jira課題キーやGoogle Doc IDをまとめて、任意の名前でグループ化できます。</p>
       <div class="rule-list" id="customRuleList"></div>
     </div>
 
@@ -441,6 +441,7 @@
           <label for="customRuleType">ルール種別</label>
           <select id="customRuleType">
             <option value="jira-keys">Jira課題キー</option>
+            <option value="google-doc-ids">Google Doc ID</option>
             <option value="url-pattern">URLパターン</option>
           </select>
         </div>
@@ -451,6 +452,15 @@
           <div class="field-help">カンマ区切りまたは改行区切り。親子課題をまとめたいときは、同じ親に属する課題キーを並べてください。</div>
           <div class="inline-actions">
             <button class="btn btn-ghost" id="fillJiraKeys" type="button">現在のJiraタブから取得</button>
+          </div>
+        </div>
+
+        <div class="form-field" id="customGoogleDocFields" hidden>
+          <label for="customRuleDocIds">Google Doc ID</label>
+          <textarea id="customRuleDocIds" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"></textarea>
+          <div class="field-help">カンマ区切りまたは改行区切り。ドキュメント・スプレッドシート・スライド・フォームに対応します。</div>
+          <div class="inline-actions">
+            <button class="btn btn-ghost" id="fillGoogleDocIds" type="button">現在のGoogleドキュメントタブから取得</button>
           </div>
         </div>
 

@@ -8,10 +8,12 @@ import {
   getActiveRules as getActiveRulesFromState,
   getManagedRules as getManagedRulesFromState,
   extractJiraIssueKeys,
+  mergeIssueKeys,
+  extractGoogleDocIds,
+  mergeDocIds,
   sanitizeCustomRules,
   compileCustomRule,
   createPatternPreview,
-  mergeIssueKeys,
   parseListInput,
 } from "./src/popup-logic.mjs";
 
@@ -27,9 +29,12 @@ const customRuleColorEl = document.getElementById("customRuleColor");
 const customRuleTypeEl = document.getElementById("customRuleType");
 const customRulePatternsEl = document.getElementById("customRulePatterns");
 const customRuleKeysEl = document.getElementById("customRuleKeys");
+const customRuleDocIdsEl = document.getElementById("customRuleDocIds");
 const customPatternFieldsEl = document.getElementById("customPatternFields");
 const customJiraFieldsEl = document.getElementById("customJiraFields");
+const customGoogleDocFieldsEl = document.getElementById("customGoogleDocFields");
 const fillJiraKeysEl = document.getElementById("fillJiraKeys");
+const fillGoogleDocIdsEl = document.getElementById("fillGoogleDocIds");
 const formTitleEl = document.getElementById("formTitle");
 const customRuleSubmitEl = document.getElementById("customRuleSubmit");
 const cancelRuleEditEl = document.getElementById("cancelRuleEdit");
@@ -245,9 +250,10 @@ function renderCustomRules() {
 }
 
 function syncCustomRuleTypeFields() {
-  const isJiraMode = customRuleTypeEl.value === "jira-keys";
-  customPatternFieldsEl.hidden = isJiraMode;
-  customJiraFieldsEl.hidden = !isJiraMode;
+  const type = customRuleTypeEl.value;
+  customJiraFieldsEl.hidden = type !== "jira-keys";
+  customGoogleDocFieldsEl.hidden = type !== "google-doc-ids";
+  customPatternFieldsEl.hidden = type !== "url-pattern";
 }
 
 function resetCustomRuleForm() {
@@ -269,6 +275,8 @@ function populateFormWithRule(rule) {
 
   if (rule.type === "jira-keys") {
     customRuleKeysEl.value = rule.issueKeys.join(", ");
+  } else if (rule.type === "google-doc-ids") {
+    customRuleDocIdsEl.value = rule.docIds.join(", ");
   } else {
     customRulePatternsEl.value = rule.patterns.join("\n");
   }
@@ -309,6 +317,17 @@ function buildCustomRuleFromForm() {
     }
 
     return { ...base, type, issueKeys };
+  }
+
+  if (type === "google-doc-ids") {
+    const docIds = parseListInput(customRuleDocIdsEl.value)
+      .filter((id) => /^[-_a-zA-Z0-9]{25,}$/.test(id));
+
+    if (docIds.length === 0) {
+      throw new Error("Google Doc IDを1件以上入力してください");
+    }
+
+    return { ...base, type, docIds };
   }
 
   const patterns = parseListInput(customRulePatternsEl.value);
@@ -440,6 +459,25 @@ fillJiraKeysEl.addEventListener("click", async () => {
     customRuleTypeEl.value = "jira-keys";
     syncCustomRuleTypeFields();
     showStatus(`${issueKeys.length} 件の Jira 課題キーを入力欄に追加しました`, "success");
+  } catch (error) {
+    showStatus(`エラー: ${error.message}`, "error");
+  }
+});
+
+fillGoogleDocIdsEl.addEventListener("click", async () => {
+  try {
+    const tabs = await getTargetTabs();
+    const docIds = [...new Set(tabs.flatMap((tab) => extractGoogleDocIds(tab.url)))];
+
+    if (docIds.length === 0) {
+      showStatus("現在の対象タブから Google Doc ID を見つけられませんでした", "error");
+      return;
+    }
+
+    customRuleDocIdsEl.value = mergeDocIds(customRuleDocIdsEl.value, docIds);
+    customRuleTypeEl.value = "google-doc-ids";
+    syncCustomRuleTypeFields();
+    showStatus(`${docIds.length} 件の Google Doc ID を入力欄に追加しました`, "success");
   } catch (error) {
     showStatus(`エラー: ${error.message}`, "error");
   }
