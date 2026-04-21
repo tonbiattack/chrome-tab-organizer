@@ -21,7 +21,13 @@ function groupTabsByWindow(tabs) {
   return map;
 }
 
-chrome.commands.onCommand.addListener(async (command) => {
+chrome.commands.onCommand.addListener((command) => {
+  handleCommand(command).catch((error) => {
+    console.error(`[Tab Organizer] command "${command}" failed:`, error);
+  });
+});
+
+async function handleCommand(command) {
   const { allWindows, collapseGroups, enabledRuleNames, customRules } = await loadSettings();
   const tabs = await chrome.tabs.query(allWindows ? {} : { currentWindow: true });
 
@@ -37,4 +43,4 @@ chrome.commands.onCommand.addListener(async (command) => {
     const managedRules = getManagedRules(GROUP_RULES, customRules);
     await ungroupAllTabs(allWindows, managedRules);
   }
-});
+}
