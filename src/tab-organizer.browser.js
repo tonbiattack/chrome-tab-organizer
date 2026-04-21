@@ -1,11 +1,16 @@
 const GROUP_RULES_URL = chrome.runtime.getURL("src/group-rules.json");
 
-const groupRulesData = await fetch(GROUP_RULES_URL).then(async (response) => {
-  if (!response.ok) {
-    throw new Error(`Failed to load group rules: ${response.status}`);
-  }
-  return response.json();
-});
+const groupRulesData = await fetch(GROUP_RULES_URL)
+  .then(async (response) => {
+    if (!response.ok) {
+      throw new Error(`Failed to load group rules: ${response.status}`);
+    }
+    return response.json();
+  })
+  .catch((error) => {
+    console.error("group-rules.json の読み込みに失敗しました", error);
+    return [];
+  });
 
 const GROUP_RULES = groupRulesData.map((rule) => ({
   ...rule,
