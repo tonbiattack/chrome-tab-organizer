@@ -15,6 +15,8 @@ import {
   compileCustomRule,
   createPatternPreview,
   parseListInput,
+  serializeCustomRules,
+  parseImportedCustomRules,
 } from "./src/popup-logic.mjs";
 
 const statusEl = document.getElementById("status");
@@ -39,6 +41,9 @@ const combinedSectionSepEl = document.getElementById("combinedSectionSep");
 const formTitleEl = document.getElementById("formTitle");
 const customRuleSubmitEl = document.getElementById("customRuleSubmit");
 const cancelRuleEditEl = document.getElementById("cancelRuleEdit");
+const btnExportCustomRulesEl = document.getElementById("btnExportCustomRules");
+const btnImportCustomRulesEl = document.getElementById("btnImportCustomRules");
+const customRulesImportFileEl = document.getElementById("customRulesImportFile");
 const RULE_COLORS = {
   blue: "#3b82f6",
   purple: "#a855f7",
@@ -124,6 +129,16 @@ async function saveCustomRules() {
   }
 
   await storage.set({ [STORAGE_KEYS.customRules]: customRules });
+}
+
+function downloadTextFile(filename, content, mimeType = "application/json") {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(url);
 }
 
 function renderRules() {
@@ -443,6 +458,44 @@ document.getElementById("btnUncheckAll").addEventListener("click", async () => {
 customRuleTypeEl.addEventListener("change", syncCustomRuleTypeFields);
 
 cancelRuleEditEl.addEventListener("click", resetCustomRuleForm);
+
+btnExportCustomRulesEl.addEventListener("click", () => {
+  if (customRules.length === 0) {
+    showStatus("エクスポートするカスタムルールがありません", "error");
+    return;
+  }
+
+  const content = serializeCustomRules(customRules);
+  downloadTextFile("tab-organizer-custom-rules.json", content);
+  showStatus(`${customRules.length} 件のカスタムルールをエクスポートしました`, "success");
+});
+
+btnImportCustomRulesEl.addEventListener("click", () => {
+  customRulesImportFileEl.click();
+});
+
+customRulesImportFileEl.addEventListener("change", async () => {
+  const [file] = customRulesImportFileEl.files ?? [];
+  if (!file) {
+    return;
+  }
+
+  try {
+    const text = await file.text();
+    const importedRules = parseImportedCustomRules(text);
+    customRules = importedRules;
+    if (editingRuleId && !customRules.some((rule) => rule.id === editingRuleId)) {
+      resetCustomRuleForm();
+    }
+    await saveCustomRules();
+    renderCustomRules();
+    showStatus(`${customRules.length} 件のカスタムルールをインポートしました`, "success");
+  } catch (error) {
+    showStatus(`エラー: ${error.message}`, "error");
+  } finally {
+    customRulesImportFileEl.value = "";
+  }
+});
 
 customRuleFormEl.addEventListener("submit", async (event) => {
   event.preventDefault();

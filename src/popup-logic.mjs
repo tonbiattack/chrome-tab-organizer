@@ -6,6 +6,7 @@ const STORAGE_KEYS = {
 };
 
 const ALLOWED_COLORS = ["blue", "cyan", "green", "grey", "orange", "pink", "purple", "red", "yellow"];
+const CUSTOM_RULES_EXPORT_VERSION = 1;
 
 function getDefaultSettings(groupRules) {
   return {
@@ -275,9 +276,43 @@ function mergeIssueKeys(currentValue, issueKeys) {
   return [...merged].join(", ");
 }
 
+function serializeCustomRules(customRules) {
+  return JSON.stringify({
+    version: CUSTOM_RULES_EXPORT_VERSION,
+    customRules,
+  }, null, 2);
+}
+
+function parseImportedCustomRules(jsonText) {
+  let parsed;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    throw new Error("JSON形式が不正です");
+  }
+
+  const rawRules = Array.isArray(parsed)
+    ? parsed
+    : Array.isArray(parsed.customRules)
+      ? parsed.customRules
+      : null;
+
+  if (!rawRules) {
+    throw new Error("カスタムルールの形式ではありません");
+  }
+
+  const customRules = sanitizeCustomRules(rawRules);
+  if (customRules.length === 0) {
+    throw new Error("有効なカスタムルールが含まれていません");
+  }
+
+  return customRules;
+}
+
 export {
   STORAGE_KEYS,
   ALLOWED_COLORS,
+  CUSTOM_RULES_EXPORT_VERSION,
   getDefaultSettings,
   buildEnabledRuleNames,
   resolvePopupSettings,
@@ -296,4 +331,6 @@ export {
   sanitizeCustomRules,
   compileCustomRule,
   createPatternPreview,
+  serializeCustomRules,
+  parseImportedCustomRules,
 };

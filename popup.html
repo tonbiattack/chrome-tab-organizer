@@ -320,6 +320,10 @@
       padding: 6px 0;
     }
 
+    .hidden-input {
+      display: none;
+    }
+
     .rule-dot {
       width: 8px;
       height: 8px;
@@ -411,6 +415,11 @@
     <div class="group-rules">
       <h2>カスタムルール</h2>
       <p class="section-desc">Jira課題キーやGoogle Doc IDをまとめて、任意の名前でグループ化できます。</p>
+      <div class="inline-actions" style="margin-bottom: 8px;">
+        <button class="btn btn-ghost" id="btnExportCustomRules" type="button">エクスポート</button>
+        <button class="btn btn-ghost" id="btnImportCustomRules" type="button">インポート</button>
+        <input class="hidden-input" id="customRulesImportFile" type="file" accept="application/json,.json">
+      </div>
       <div class="rule-list" id="customRuleList"></div>
     </div>
 
