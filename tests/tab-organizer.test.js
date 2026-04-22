@@ -272,7 +272,7 @@ describe("ungroupAllTabs", () => {
   beforeEach(() => {
     global.chrome = {
       windows: {
-        WINDOW_ID_CURRENT: -2,
+        getAll: jest.fn(async () => [{ id: 1, focused: true }]),
       },
       tabs: {
         query: jest.fn(async () => [
@@ -314,10 +314,10 @@ describe("ungroupAllTabs", () => {
     expect(global.chrome.tabGroups.query).toHaveBeenCalledWith({});
   });
 
-  test("allWindows=false のとき現在のウィンドウのみクエリする", async () => {
+  test("allWindows=false のとき現在のフォーカスウィンドウIDでクエリする", async () => {
     await ungroupAllTabs(false);
     expect(global.chrome.tabs.query).toHaveBeenCalledWith({ currentWindow: true });
-    expect(global.chrome.tabGroups.query).toHaveBeenCalledWith({ windowId: -2 });
+    expect(global.chrome.tabGroups.query).toHaveBeenCalledWith({ windowId: 1 });
   });
 });
 
